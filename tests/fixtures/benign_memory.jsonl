@@ -1,0 +1,2 @@
+{"type":"entity","name":"user_profile","entityType":"person","observations":["Lives in Austin, Texas","Prefers responses in Spanish","Has two kids and a dog named Rocky"]}
+{"type":"entity","name":"project_ctx","entityType":"project","observations":["Building a storefront with Next.js","Deadline for beta is 2026-08-15"]}

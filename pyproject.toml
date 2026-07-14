@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "memwall"
+version = "0.4.0"
+description = "Scanner for AI agent memory stores: detects memory poisoning, injected instructions, and hygiene issues."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+authors = [{ name = "Gary Bayer Valdivia", email = "ggbayervaldivia@gmail.com" }]
+keywords = ["ai-agents", "security", "memory", "memory-poisoning", "prompt-injection", "llm"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Security",
+]
+
+[project.urls]
+Homepage = "https://github.com/gbayerv26/memwall"
+Issues = "https://github.com/gbayerv26/memwall/issues"
+Changelog = "https://github.com/gbayerv26/memwall/blob/master/CHANGELOG.md"
+
+[project.optional-dependencies]
+judge = ["anthropic>=0.40"]
+dev = ["pytest"]
+
+[project.scripts]
+memwall = "memwall.cli:run"
+
+[tool.setuptools.packages.find]
+include = ["memwall*"]
