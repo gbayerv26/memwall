@@ -55,7 +55,7 @@ preferences pass, injections stay blocked, judge down = fail-safe block.
 **7/**
 pip install memwall
 
-MIT licensed, stdlib-only core, 27 tests, honest limitations in the README.
+MIT licensed, stdlib-only core, 30 tests, honest limitations in the README.
 
 If you run agents with persistent memory, scan them today — you might be
 surprised what's already in there.

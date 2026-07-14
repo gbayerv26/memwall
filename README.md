@@ -19,7 +19,7 @@ dependencies for the core scan.
 ## Quickstart
 
 ```bash
-pip install -e .
+pip install memwall
 
 memwall scan path/to/memory.json          # one store or export
 memwall scan .                            # walk a project: CLAUDE.md, AGENTS.md, memory files
@@ -39,7 +39,7 @@ memwall scan examples/
 Directory scans are memory-aware: `package.json`, `tsconfig.json`, and other
 non-memory JSON are skipped automatically, as are files over 5 MB.
 
-## Supported stores (v0.1)
+## Supported stores
 
 - **MCP reference memory server** — `memory.json` / `.jsonl` of entities and observations
 - **mem0-style exports** — JSON lists of memory objects
@@ -65,7 +65,7 @@ for semantic classification (`benign_fact` / `preference` / `task_context` /
 content as untrusted data and never follows instructions inside it.
 
 ```bash
-pip install -e ".[judge]"
+pip install "memwall[judge]"
 export ANTHROPIC_API_KEY=sk-ant-...
 memwall scan memory.json --judge
 ```

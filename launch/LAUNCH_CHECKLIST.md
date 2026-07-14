@@ -17,7 +17,7 @@ cd "C:\Users\Gary\Desktop\claude\new app\memwall"
 python -m unittest discover -s tests -t . -v
 ```
 
-Expect: 27 tests, OK.
+Expect: 30 tests, OK.
 
 ## 2. Placeholders and project URLs — DONE
 
@@ -30,8 +30,8 @@ Nothing to do here.
 
 ```powershell
 git add .
-git commit -m "memwall v0.3.0: scanner + MCP quarantine gateway for agent memory poisoning"
-git tag v0.3.0
+git commit -m "memwall v0.4.0: scanner + MCP quarantine gateway for agent memory poisoning"
+git tag v0.4.0
 ```
 
 Optional: delete or keep this `launch/` folder in the public repo — your call.
