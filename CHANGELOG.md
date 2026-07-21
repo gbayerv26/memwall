@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.0 — 2026-07-21
+
+- `memwall watch`: continuous monitoring with delta detection — first run
+  snapshots the store, later runs alert only on NEW findings; `--once
+  --fail-on-new` turns any cron/CI job into a poisoning alarm
+- `memwall forget-check`: GDPR right-to-be-forgotten verification — proves
+  whether a subject (email, name, id) still appears anywhere in agent
+  memory, with a JSON proof artifact
+- SARIF 2.1.0 export (`scan --sarif`) for GitHub code scanning and security
+  dashboards; self-contained HTML report (`scan --html`)
+
 ## 0.5.0 — 2026-07-21
 
 - SQLite adapter: scans every text cell of Letta / mem0-history / custom

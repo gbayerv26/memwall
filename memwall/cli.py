@@ -34,6 +34,10 @@ def main(argv=None) -> int:
     scan_p.add_argument("--model", default=None, help=f"judge model (default: {judge_mod.DEFAULT_MODEL})")
     scan_p.add_argument("--json", dest="json_out", metavar="PATH", help="write a JSON report")
     scan_p.add_argument("--markdown", dest="md_out", metavar="PATH", help="write a Markdown report")
+    scan_p.add_argument("--sarif", dest="sarif_out", metavar="PATH",
+                        help="write a SARIF report (GitHub code scanning / dashboards)")
+    scan_p.add_argument("--html", dest="html_out", metavar="PATH",
+                        help="write a standalone HTML report")
     scan_p.add_argument("--fail-on", choices=["info", "low", "medium", "high", "critical"], default="high",
                         help="exit 1 if any finding is at or above this severity (CI gate)")
     scan_p.add_argument("--baseline", metavar="PATH",
@@ -44,6 +48,23 @@ def main(argv=None) -> int:
                         help="print only the summary lines")
 
     sub.add_parser("rules", help="list heuristic rules")
+
+    watch_p = sub.add_parser("watch", help="continuously monitor a store and alert on NEW findings")
+    watch_p.add_argument("path", help="memory file, export, or directory to monitor")
+    watch_p.add_argument("--format", choices=["auto", "files", "mcp", "mem0", "json", "sqlite"], default="auto")
+    watch_p.add_argument("--state-dir", default=".memwall", help="where to keep the monitoring snapshot")
+    watch_p.add_argument("--interval", type=int, default=60, help="seconds between scans")
+    watch_p.add_argument("--once", action="store_true", help="run a single delta check and exit")
+    watch_p.add_argument("--fail-on-new", action="store_true",
+                         help="with --once, exit 1 if any new finding appeared")
+
+    forget_p = sub.add_parser("forget-check",
+                              help="GDPR: find memories that still reference a subject (right to be forgotten)")
+    forget_p.add_argument("path", help="memory file, export, or directory to check")
+    forget_p.add_argument("--subject", action="append", default=[], metavar="ID",
+                          help="identifier to search for (email, name, id); repeatable")
+    forget_p.add_argument("--format", choices=["auto", "files", "mcp", "mem0", "json", "sqlite"], default="auto")
+    forget_p.add_argument("--json", dest="json_out", metavar="PATH", help="write a JSON report")
 
     gw_p = sub.add_parser("gateway", help="run the MCP quarantine gateway in front of a memory server")
     gw_p.add_argument("--state-dir", default=".memwall", help="where to keep the event log and quarantine")
@@ -92,6 +113,10 @@ def main(argv=None) -> int:
 
     if args.command == "scan":
         return _cmd_scan(args)
+    if args.command == "watch":
+        return _cmd_watch(args)
+    if args.command == "forget-check":
+        return _cmd_forget(args)
     if args.command == "gateway":
         return _cmd_gateway(args)
     if args.command == "log":
@@ -147,10 +172,94 @@ def _cmd_scan(args) -> int:
     if args.md_out:
         report_mod.write_markdown(result, args.md_out)
         print(f"markdown report: {args.md_out}")
+    if args.sarif_out:
+        from . import export as export_mod
+        export_mod.write_sarif(result, args.sarif_out)
+        print(f"sarif report: {args.sarif_out}")
+    if args.html_out:
+        from . import export as export_mod
+        export_mod.write_html(result, args.html_out)
+        print(f"html report: {args.html_out}")
 
     threshold = Severity[args.fail_on.upper()]
     worst = max((f.severity for rep in reports for f in rep.findings), default=None)
     return 1 if worst is not None and worst >= threshold else 0
+
+
+def _print_tick(tick) -> None:
+    from .report import _clean
+    if tick.is_baseline:
+        print(f"baseline established: {tick.total_findings} finding(s) across {tick.scanned} memories")
+        return
+    if not tick.new_items:
+        print(f"no new findings ({tick.total_findings} known, {tick.scanned} memories)")
+        return
+    total_new = sum(len(fs) for _, fs in tick.new_items)
+    print(f"ALERT: {total_new} NEW finding(s) in {len(tick.new_items)} memor(ies):")
+    for record, fresh in tick.new_items:
+        worst = max(f.severity for f in fresh)
+        print(f"  [{worst.name}] {record.id} ({record.store}: {record.source})")
+        print(f'    "{_clean(record.content)}"')
+        for f in sorted(fresh, key=lambda f: f.severity, reverse=True):
+            print(f"    - {f.rule_id} {f.rule_name} ({f.severity.name}): {f.message}")
+
+
+def _cmd_watch(args) -> int:
+    from . import monitor
+    try:
+        if args.once:
+            tick = monitor.run_once(args.path, args.state_dir, args.format)
+            _print_tick(tick)
+            if args.fail_on_new and tick.new_items:
+                return 1
+            return 0
+        print(f"memwall watch: monitoring {args.path} every {args.interval}s "
+              f"(state={args.state_dir}); Ctrl-C to stop")
+        monitor.watch(args.path, args.state_dir, args.interval, args.format, on_tick=_print_tick)
+    except FileNotFoundError:
+        print(f"memwall: path not found: {args.path}", file=sys.stderr)
+        return 2
+    except KeyboardInterrupt:
+        print("\nstopped")
+    return 0
+
+
+def _cmd_forget(args) -> int:
+    from . import forget
+    if not args.subject:
+        print("memwall: forget-check needs at least one --subject", file=sys.stderr)
+        return 2
+    try:
+        hits = forget.scan_path(args.path, args.subject, args.format)
+    except FileNotFoundError:
+        print(f"memwall: path not found: {args.path}", file=sys.stderr)
+        return 2
+
+    subjects = ", ".join(args.subject)
+    if not hits:
+        print(f"erased: no memory references {subjects}")
+    else:
+        from .report import _clean
+        print(f"NOT erased: {len(hits)} memor(ies) still reference {subjects}:")
+        for hit in hits:
+            print(f"  {hit.record.id} ({hit.record.store}: {hit.record.source}) "
+                  f"-> matched {', '.join(hit.matched)}")
+            print(f'    "{_clean(hit.record.content)}"')
+
+    if args.json_out:
+        with open(args.json_out, "w", encoding="utf-8") as fh:
+            json.dump({
+                "subjects": args.subject,
+                "erased": not hits,
+                "matches": [
+                    {"id": h.record.id, "source": h.record.source, "store": h.record.store,
+                     "matched": h.matched, "content": h.record.content}
+                    for h in hits
+                ],
+            }, fh, indent=2, ensure_ascii=False)
+        print(f"json report: {args.json_out}")
+
+    return 1 if hits else 0
 
 
 def _cmd_gateway(args) -> int:

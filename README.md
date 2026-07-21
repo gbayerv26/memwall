@@ -138,6 +138,38 @@ memwall quarantine --state-dir ~/.memwall drop q1a2b3c4
 `drop` discards it. Both decisions are appended to the audit trail, never
 rewritten over it.
 
+## Monitoring — catch poison the moment it lands
+
+`memwall watch` re-scans a store on an interval and alerts **only on new
+findings** — the first run establishes a snapshot, every later run reports
+what appeared since:
+
+```bash
+memwall watch ./agent-memory --interval 300          # continuous, every 5 min
+memwall watch ./agent-memory --once --fail-on-new    # one delta check (cron / CI)
+```
+
+`--once --fail-on-new` exits 1 when something new appeared, so a cron job,
+scheduled CI run, or systemd timer becomes a poisoning alarm with one line.
+
+## Compliance
+
+**Right to be forgotten (GDPR Art. 17).** Erasure quietly fails in summarized
+agent memory — a name survives inside a paraphrase after the source row was
+deleted. `forget-check` proves whether a subject is actually gone:
+
+```bash
+memwall forget-check ./agent-memory --subject "alice@corp.com" --subject "Alice Smith" --json proof.json
+```
+
+Exit 0 with a JSON proof when the subject is erased; exit 1 with every
+remaining reference when they are not.
+
+**Standard exports.** `memwall scan --sarif report.sarif` emits SARIF 2.1.0
+for GitHub code scanning and security dashboards; `--html report.html` writes
+a self-contained, dark-mode-aware report you can attach to a compliance
+ticket or email to a client.
+
 ## Trust-aware policies — the provenance handshake
 
 Agents (or their harnesses) can declare where memory content came from by
@@ -187,8 +219,9 @@ flagged, so normal traffic pays zero latency.
 
 ## Roadmap
 
-- **Phase 3 — hosted monitoring.** Continuous scans, alerting, and compliance
-  exports (EU AI Act logging, GDPR erasure verification).
+- **Hosted memwall.** The `watch` engine as a managed service: fleet
+  dashboard, alert routing (Slack/email), and scheduled compliance reports.
+  Interested? Open an issue titled "hosted waitlist".
 - More stores: Zep, Letta, LangGraph checkpoints, vector DBs.
 - Policy packs: shareable, versioned policies per industry / risk appetite.
 
