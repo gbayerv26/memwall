@@ -47,7 +47,7 @@ flagged 4 of 17: 3 critical, 1 high
   - MW007 payment-redirect (HIGH): matched: forward a copy of every invoice
 ```
 
-Thirteen rules, zero dependencies, runs in milliseconds. It catches injected
+Sixteen rules, zero dependencies, runs in milliseconds. It catches injected
 standing orders, secrecy pressure, authority claims ("system note:",
 "developer mode"), payment redirects, crypto wallets, encoded payloads,
 zero-width hidden characters, and PII that needs an expiry policy. The combo

@@ -82,14 +82,27 @@ RULES = [
     Rule("MW013", "hidden-html-comment", Severity.LOW,
          "HTML comment invisible when the file renders as Markdown.",
          _rx(r"<!--[\s\S]*?-->")),
+    Rule("MW014", "role-marker-smuggling", Severity.MEDIUM,
+         "Chat-template or role markers smuggled into memory content.",
+         _rx(r"<\|[a-z_]{2,}\|>|\[/?INST\]|\bbegin_of_text\b|^(?:assistant|system)\s*:")),
+    Rule("MW015", "rendering-beacon", Severity.MEDIUM,
+         "Markdown/HTML image pointing at a remote URL - exfiltrates when rendered.",
+         _rx(r"!\[[^\]]*\]\(\s*https?://|<img[^>]+src=[\"']?https?://")),
+    Rule("MW016", "delayed-trigger", Severity.MEDIUM,
+         "Conditional trigger phrasing - the signature of memory implants that fire later.",
+         _rx(r"\bwhen(?:ever)? the (?:user|owner|human|customer) (?:asks|mentions|says|requests|talks about)\b"
+             r"|\bthe next time\b|\bnext time the\b"
+             r"|\bon (?:the )?next (?:session|run|startup|login)\b"
+             r"|\bif (?:the user|anyone|someone) (?:asks|mentions|requests)\b")),
 ]
 
-# In instruction files (CLAUDE.md, AGENTS.md, ...) imperatives and direct
-# address are the normal register, so these rules would only produce noise.
-SKIP_FOR_INSTRUCTION_FILES = {"MW002", "MW004"}
+# In instruction files (CLAUDE.md, AGENTS.md, ...) imperatives, direct
+# address, and conditional guidance are the normal register, so these rules
+# would only produce noise.
+SKIP_FOR_INSTRUCTION_FILES = {"MW002", "MW004", "MW016"}
 
-INSTRUCTION_RULES = {"MW001", "MW002", "MW003", "MW004", "MW005", "MW006"}
-VECTOR_RULES = {"MW007", "MW008", "MW009"}
+INSTRUCTION_RULES = {"MW001", "MW002", "MW003", "MW004", "MW005", "MW006", "MW014", "MW016"}
+VECTOR_RULES = {"MW007", "MW008", "MW009", "MW015"}
 
 
 def evaluate(record: MemoryRecord) -> RecordReport:

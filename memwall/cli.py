@@ -26,7 +26,7 @@ def main(argv=None) -> int:
 
     scan_p = sub.add_parser("scan", help="scan a memory store, export, file, or directory")
     scan_p.add_argument("path", help="memory file, export, or directory to walk")
-    scan_p.add_argument("--format", choices=["auto", "files", "mcp", "mem0", "json"], default="auto")
+    scan_p.add_argument("--format", choices=["auto", "files", "mcp", "mem0", "json", "sqlite"], default="auto")
     scan_p.add_argument("--judge", action="store_true",
                         help="run the Claude judge on flagged records (needs ANTHROPIC_API_KEY)")
     scan_p.add_argument("--judge-all", action="store_true",
@@ -49,8 +49,9 @@ def main(argv=None) -> int:
     gw_p.add_argument("--state-dir", default=".memwall", help="where to keep the event log and quarantine")
     gw_p.add_argument("--block-at", choices=["low", "medium", "high", "critical"], default="high",
                       help="quarantine writes with findings at or above this severity")
-    gw_p.add_argument("--policy", metavar="PATH",
-                      help="JSON policy file with per-origin block thresholds (overrides --block-at)")
+    gw_p.add_argument("--policy", metavar="NAME_OR_PATH",
+                      help="preset (strict/balanced/permissive) or JSON policy file with "
+                           "per-origin block thresholds (overrides --block-at)")
     gw_p.add_argument("--judge", action="store_true",
                       help="consult the Claude judge before quarantining flagged writes (needs ANTHROPIC_API_KEY)")
     gw_p.add_argument("--model", default=None, help="judge model for --judge")
@@ -160,7 +161,13 @@ def _cmd_gateway(args) -> int:
         print("memwall: gateway needs a backend command after --", file=sys.stderr)
         return 2
     if args.policy:
-        policy = Policy.from_file(args.policy)
+        from .policy import resolve
+        try:
+            policy = resolve(args.policy)
+        except FileNotFoundError:
+            print(f"memwall: policy not found: {args.policy} "
+                  f"(use strict/balanced/permissive or a JSON file)", file=sys.stderr)
+            return 2
     else:
         policy = Policy(default_block_at=Severity[args.block_at.upper()])
     gateway = Gateway(backend, state_dir=args.state_dir, policy=policy,

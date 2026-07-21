@@ -16,7 +16,7 @@ best-practices posts, not tools. So I built one.
 Memwall does two things:
 
 1. `memwall scan` — audits existing memory stores (MCP memory servers, mem0
-exports, CLAUDE.md-style instruction files) with 13 heuristic rules: injected
+exports, SQLite agent DBs, CLAUDE.md-style instruction files) with 16 heuristic rules: injected
 standing orders, secrecy pressure ("don't tell the user"), payment redirects,
 zero-width hidden characters, etc. A combo rule flags the classic shape:
 standing order + outbound destination in the same memory. Zero dependencies,

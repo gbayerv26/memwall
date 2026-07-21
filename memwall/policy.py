@@ -41,3 +41,22 @@ class Policy:
             for origin, level in (data.get("origins") or {}).items()
         }
         return cls(default_block_at=default, origin_thresholds=origins)
+
+
+PRESETS = {
+    "balanced": lambda: Policy(),
+    "strict": lambda: Policy(default_block_at=Severity.MEDIUM, origin_thresholds={
+        "user": Severity.HIGH, "agent": Severity.MEDIUM, "tool": Severity.LOW,
+        "web": Severity.LOW, "email": Severity.LOW, "document": Severity.LOW}),
+    "permissive": lambda: Policy(default_block_at=Severity.CRITICAL, origin_thresholds={
+        "user": Severity.CRITICAL, "agent": Severity.CRITICAL, "tool": Severity.HIGH,
+        "web": Severity.HIGH, "email": Severity.HIGH, "document": Severity.HIGH}),
+}
+
+
+def resolve(name_or_path: str) -> Policy:
+    """Accept a built-in preset name (strict/balanced/permissive) or a JSON file path."""
+    preset = PRESETS.get(str(name_or_path).lower())
+    if preset is not None:
+        return preset()
+    return Policy.from_file(name_or_path)

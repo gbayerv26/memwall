@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.0 — 2026-07-21
+
+- SQLite adapter: scans every text cell of Letta / mem0-history / custom
+  agent databases, auto-detected by file magic, opened read-only
+- Three new rules: MW014 role-marker smuggling (`<|im_start|>`, `[INST]`),
+  MW015 rendering beacons (remote markdown/HTML images), MW016 delayed
+  triggers ("when the user asks about X...") — the fire-later implant
+  signature, wired into the MW000 combo escalation
+- Gateway policy presets: `--policy strict|balanced|permissive`
+
 ## 0.4.0 — 2026-07-14
 
 - Baseline files: `--baseline` / `--update-baseline` suppress accepted

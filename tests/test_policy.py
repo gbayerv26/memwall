@@ -31,6 +31,15 @@ class PolicyTests(unittest.TestCase):
         self.assertEqual(policy.threshold_for("email"), Severity.MEDIUM)     # builtin kept
         self.assertEqual(policy.threshold_for("something-else"), Severity.MEDIUM)  # default
 
+    def test_presets(self):
+        from memwall.policy import resolve
+        self.assertEqual(resolve("strict").threshold_for("web"), Severity.LOW)
+        self.assertEqual(resolve("balanced").threshold_for("web"), Severity.MEDIUM)
+        self.assertEqual(resolve("permissive").threshold_for("web"), Severity.HIGH)
+        self.assertEqual(resolve("STRICT").default_block_at, Severity.MEDIUM)
+        with self.assertRaises(FileNotFoundError):
+            resolve("no-such-policy.json")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -32,9 +32,9 @@ Sitting between "prefers dark roast coffee" and "works at Acme Corp."
 
 **4/**
 memwall scan: audits your existing stores — MCP memory servers, mem0 exports,
-CLAUDE.md files.
+SQLite agent DBs, CLAUDE.md files.
 
-13 rules. The key one: a standing order + an outbound destination in the same
+16 rules. The key one: a standing order + an outbound destination in the same
 memory = the signature shape of an exfiltration implant. CRITICAL, instantly.
 
 **5/**
@@ -110,7 +110,7 @@ find actual tooling for it, just papers. So I built memwall.
 Two parts:
 
 1. **Scanner** — `memwall scan` audits MCP memory server files, mem0 exports,
-   and CLAUDE.md-style instruction files. 13 heuristic rules (injected
+   SQLite agent DBs, and CLAUDE.md-style instruction files. 16 heuristic rules (injected
    standing orders, "don't tell the user" secrecy pressure, payment
    redirects, zero-width hidden chars). Zero dependencies, CI-friendly exit
    codes.

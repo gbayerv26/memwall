@@ -43,18 +43,23 @@ non-memory JSON are skipped automatically, as are files over 5 MB.
 
 - **MCP reference memory server** — `memory.json` / `.jsonl` of entities and observations
 - **mem0-style exports** — JSON lists of memory objects
+- **SQLite-backed stores** — Letta, mem0 history, custom agent DBs: every text
+  cell in every table, auto-detected by file magic, opened read-only
 - **Agent instruction files** — `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.cursorrules`, `.mdc`
 - **Notes / markdown memory files** and generic JSON dumps
 
 ## How it works
 
-**Pass 1 — heuristics (free, instant).** Rules MW001–MW013 catch the known
+**Pass 1 — heuristics (free, instant).** Rules MW001–MW016 catch the known
 shapes of memory poisoning: instruction overrides, secrecy pressure
 ("don't tell the user"), authority claims ("system note:", "developer mode"),
 payment redirection, crypto wallets, encoded payloads, zero-width/bidi hidden
-characters, and PII that needs an expiry policy. A combo rule (MW000)
-escalates to CRITICAL when a standing order and an outbound destination appear
-in the same memory — the classic exfiltration shape.
+characters, chat-role smuggling (`<|im_start|>`), rendering beacons (remote
+markdown images), delayed triggers ("when the user asks about X..." — the
+signature of implants that fire later), and PII that needs an expiry policy.
+A combo rule (MW000) escalates to CRITICAL when a standing order and an
+outbound destination appear in the same memory — the classic exfiltration
+shape.
 
 Instruction files get a calibrated ruleset: imperatives are normal in a
 CLAUDE.md, so only the genuinely suspicious rules apply there.
@@ -155,7 +160,8 @@ a stricter bar than something the user typed:
 | `tool` / `web` / `email` / `document` | medium |
 | undeclared | `--block-at` (default high) |
 
-Override with `--policy policy.json`:
+Override with a preset — `--policy strict`, `--policy balanced`, or
+`--policy permissive` — or a JSON file:
 
 ```json
 {"default_block_at": "high", "origins": {"web": "low", "voicemail": "low"}}

@@ -4,23 +4,27 @@ from __future__ import annotations
 import os
 import sys
 
-from . import files, generic_json, mcp_memory, mem0_export
+from . import files, generic_json, mcp_memory, mem0_export, sqlite_store
 
 ADAPTERS = {
     "files": files.load,
     "mcp": mcp_memory.load,
     "mem0": mem0_export.load,
     "json": generic_json.load,
+    "sqlite": sqlite_store.load,
 }
 
 SKIP_DIRS = {".git", "node_modules", "__pycache__", ".venv", "venv", "dist", "build", ".next"}
 # Hidden dirs are skipped except the ones agents actually keep memory in.
 KEEP_HIDDEN = {".claude", ".codex", ".cursor", ".gemini", ".github"}
 KNOWN_NAMES = {"claude.md", "agents.md", "gemini.md", ".cursorrules", "memory.json", "memory.jsonl"}
-EXTS = {".md", ".mdc", ".txt", ".json", ".jsonl"}
+DB_EXTS = {".db", ".sqlite", ".sqlite3"}
+EXTS = {".md", ".mdc", ".txt", ".json", ".jsonl"} | DB_EXTS
 
 
 def detect_format(path: str) -> str:
+    if sqlite_store.is_sqlite(path):
+        return "sqlite"
     ext = os.path.splitext(path)[1].lower()
     if ext == ".jsonl":
         return "mcp"
@@ -50,6 +54,8 @@ def _walkable(file_path: str, low: str, ext: str) -> bool:
             return False
     except OSError:
         return False
+    if ext in DB_EXTS:
+        return sqlite_store.is_sqlite(file_path)
     if ext == ".json" and low not in KNOWN_NAMES:
         # In directory walks, only ingest .json that looks like agent memory -
         # otherwise every package.json and tsconfig.json becomes noise.
