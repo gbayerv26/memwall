@@ -11,6 +11,16 @@ from . import report as report_mod
 from .models import ScanResult, Severity
 
 
+def _positive_int(value):
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("must be a positive integer") from exc
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return parsed
+
+
 def _strip_dashes(argv) -> list:
     argv = list(argv or [])
     return argv[1:] if argv and argv[0] == "--" else argv
@@ -53,7 +63,7 @@ def main(argv=None) -> int:
     watch_p.add_argument("path", help="memory file, export, or directory to monitor")
     watch_p.add_argument("--format", choices=["auto", "files", "mcp", "mem0", "json", "sqlite"], default="auto")
     watch_p.add_argument("--state-dir", default=".memwall", help="where to keep the monitoring snapshot")
-    watch_p.add_argument("--interval", type=int, default=60, help="seconds between scans")
+    watch_p.add_argument("--interval", type=_positive_int, default=60, help="seconds between scans")
     watch_p.add_argument("--once", action="store_true", help="run a single delta check and exit")
     watch_p.add_argument("--fail-on-new", action="store_true",
                          help="with --once, exit 1 if any new finding appeared")
@@ -134,7 +144,6 @@ def _cmd_scan(args) -> int:
         return 2
     if not records:
         print(f"memwall: no memories found at {args.path}")
-        return 0
 
     reports = heuristics.scan_records(records)
 
@@ -206,6 +215,9 @@ def _print_tick(tick) -> None:
 
 def _cmd_watch(args) -> int:
     from . import monitor
+    if args.fail_on_new and not args.once:
+        print("memwall: --fail-on-new requires --once", file=sys.stderr)
+        return 2
     try:
         if args.once:
             tick = monitor.run_once(args.path, args.state_dir, args.format)
@@ -226,16 +238,17 @@ def _cmd_watch(args) -> int:
 
 def _cmd_forget(args) -> int:
     from . import forget
-    if not args.subject:
+    normalized_subjects = [s.strip() for s in args.subject if s.strip()]
+    if not normalized_subjects:
         print("memwall: forget-check needs at least one --subject", file=sys.stderr)
         return 2
     try:
-        hits = forget.scan_path(args.path, args.subject, args.format)
+        hits = forget.scan_path(args.path, normalized_subjects, args.format)
     except FileNotFoundError:
         print(f"memwall: path not found: {args.path}", file=sys.stderr)
         return 2
 
-    subjects = ", ".join(args.subject)
+    subjects = ", ".join(normalized_subjects)
     if not hits:
         print(f"erased: no memory references {subjects}")
     else:
@@ -249,7 +262,7 @@ def _cmd_forget(args) -> int:
     if args.json_out:
         with open(args.json_out, "w", encoding="utf-8") as fh:
             json.dump({
-                "subjects": args.subject,
+                "subjects": normalized_subjects,
                 "erased": not hits,
                 "matches": [
                     {"id": h.record.id, "source": h.record.source, "store": h.record.store,

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.1 — 2026-07-21
+
+- Isolated monitor snapshots by target, recovered safely from invalid state,
+  and detected new records even when their poisoned content is duplicated
+- Enforced read-only SQLite access, safely quoted table names, and discovered
+  SQLite stores by file signature regardless of extension or size
+- Fixed empty scan exports/baseline updates and corrected SARIF location
+  structure plus cross-platform URI encoding
+- Normalized `forget-check` subjects, clarified its literal-match guarantee,
+  and rejected invalid `watch` option combinations
+
 ## 0.6.0 — 2026-07-21
 
 - `memwall watch`: continuous monitoring with delta detection — first run
