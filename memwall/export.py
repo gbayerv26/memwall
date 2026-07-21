@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import html
 import json
+import re
+from urllib.parse import quote
 
 from . import __version__
 from .heuristics import RULES
@@ -51,8 +53,7 @@ def to_sarif(result: ScanResult) -> dict:
                 "message": {"text": f"[{rep.record.id}] {f.rule_name}: {f.message}"},
                 "locations": [{"physicalLocation": {
                     "artifactLocation": {"uri": _uri(rep.record.source)},
-                    "logicalLocations": [{"name": rep.record.id}],
-                }}],
+                }, "logicalLocations": [{"name": rep.record.id}]}],
             }
             if f.rule_id in index:
                 entry["ruleIndex"] = index[f.rule_id]
@@ -74,7 +75,17 @@ def to_sarif(result: ScanResult) -> dict:
 
 
 def _uri(source: str) -> str:
-    return source.replace("\\", "/")
+    windows_abs = re.match(r"^(?:[A-Za-z]:[\\/]|\\\\)", source)
+    if windows_abs:
+        path = source.replace("\\", "/")
+        if path.startswith("//"):
+            return "file:" + quote(path, safe="/:")
+        return "file:///" + quote(path, safe="/:")
+    if re.match(r"^[A-Za-z][A-Za-z0-9+.-]*:", source):
+        return source
+    if source.startswith("/"):
+        return "file://" + quote(source, safe="/")
+    return quote(source.replace("\\", "/"), safe="/:")
 
 
 def write_sarif(result: ScanResult, path: str) -> None:

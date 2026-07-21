@@ -15,6 +15,11 @@ MAX_RECORDS = 20000
 MIN_TEXT_LEN = 4
 
 
+def _quote_identifier(identifier: str) -> str:
+    """Quote a SQLite identifier, escaping embedded double quotes."""
+    return '"' + identifier.replace('"', '""') + '"'
+
+
 def is_sqlite(path: str) -> bool:
     try:
         with open(path, "rb") as fh:
@@ -25,18 +30,17 @@ def is_sqlite(path: str) -> bool:
 
 def load(path: str) -> list:
     uri = Path(path).resolve().as_uri() + "?mode=ro"
-    try:
-        con = sqlite3.connect(uri, uri=True)
-    except sqlite3.Error:
-        con = sqlite3.connect(path)
+    con = sqlite3.connect(uri, uri=True)
     records = []
     try:
+        con.execute("PRAGMA query_only = ON")
         tables = [row[0] for row in con.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")]
         for table in tables:
+            quoted_table = _quote_identifier(table)
             try:
-                cols = [info[1] for info in con.execute(f'PRAGMA table_info("{table}")')]
-                cursor = con.execute(f'SELECT rowid, * FROM "{table}"')
+                cols = [info[1] for info in con.execute(f'PRAGMA table_info({quoted_table})')]
+                cursor = con.execute(f'SELECT rowid, * FROM {quoted_table}')
             except sqlite3.Error:  # WITHOUT ROWID / virtual tables
                 continue
             for row in cursor:

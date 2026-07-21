@@ -156,14 +156,15 @@ scheduled CI run, or systemd timer becomes a poisoning alarm with one line.
 
 **Right to be forgotten (GDPR Art. 17).** Erasure quietly fails in summarized
 agent memory — a name survives inside a paraphrase after the source row was
-deleted. `forget-check` proves whether a subject is actually gone:
+deleted. `forget-check` checks whether supplied literal identifiers remain
+(case-insensitive); it cannot prove paraphrase or semantic erasure:
 
 ```bash
 memwall forget-check ./agent-memory --subject "alice@corp.com" --subject "Alice Smith" --json proof.json
 ```
 
-Exit 0 with a JSON proof when the subject is erased; exit 1 with every
-remaining reference when they are not.
+Exit 0 when identifiers are absent; exit 1 with every remaining literal
+reference. Add `--json` to save the result as a report.
 
 **Standard exports.** `memwall scan --sarif report.sarif` emits SARIF 2.1.0
 for GitHub code scanning and security dashboards; `--html report.html` writes

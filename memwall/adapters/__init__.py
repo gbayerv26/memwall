@@ -47,15 +47,17 @@ MAX_WALK_FILE_BYTES = 5 * 1024 * 1024
 
 
 def _walkable(file_path: str, low: str, ext: str) -> bool:
+    confirmed_sqlite = sqlite_store.is_sqlite(file_path)
     try:
         if os.path.getsize(file_path) > MAX_WALK_FILE_BYTES:
-            print(f"memwall: skipped {file_path}: larger than "
-                  f"{MAX_WALK_FILE_BYTES // (1024 * 1024)} MB", file=sys.stderr)
-            return False
+            if not confirmed_sqlite:
+                print(f"memwall: skipped {file_path}: larger than "
+                      f"{MAX_WALK_FILE_BYTES // (1024 * 1024)} MB", file=sys.stderr)
+                return False
     except OSError:
         return False
     if ext in DB_EXTS:
-        return sqlite_store.is_sqlite(file_path)
+        return confirmed_sqlite
     if ext == ".json" and low not in KNOWN_NAMES:
         # In directory walks, only ingest .json that looks like agent memory -
         # otherwise every package.json and tsconfig.json becomes noise.
@@ -74,9 +76,10 @@ def load(path: str, fmt: str = "auto") -> list:
             for name in sorted(names):
                 low = name.lower()
                 ext = os.path.splitext(low)[1]
-                if low not in KNOWN_NAMES and ext not in EXTS:
-                    continue
                 file_path = os.path.join(root, name)
+                # Probe the SQLite magic before rejecting unknown extensions.
+                if low not in KNOWN_NAMES and ext not in EXTS and not sqlite_store.is_sqlite(file_path):
+                    continue
                 if not _walkable(file_path, low, ext):
                     continue
                 try:

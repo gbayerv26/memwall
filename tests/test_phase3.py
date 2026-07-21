@@ -21,6 +21,27 @@ def _result(path):
 
 
 class MonitorTests(unittest.TestCase):
+    def test_empty_scan_exports_and_baseline(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = os.path.join(tmp, "empty.jsonl")
+            open(store, "w").close()
+            outputs = {k: os.path.join(tmp, k) for k in ("j.json", "m.md", "s.sarif", "h.html")}
+            code = cli.main(["scan", store, "--json", outputs["j.json"], "--markdown", outputs["m.md"],
+                             "--sarif", outputs["s.sarif"], "--html", outputs["h.html"]])
+            self.assertEqual(code, 0)
+            self.assertTrue(all(os.path.exists(p) for p in outputs.values()))
+            baseline = os.path.join(tmp, "baseline.json")
+            self.assertEqual(cli.main(["scan", store, "--baseline", baseline, "--update-baseline"]), 0)
+            with open(baseline, encoding="utf-8") as fh:
+                self.assertIsInstance(json.load(fh), dict)
+
+    def test_invalid_watch_options(self):
+        with contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit) as err:
+                cli.main(["watch", BENIGN, "--interval", "0"])
+            self.assertEqual(err.exception.code, 2)
+            self.assertEqual(cli.main(["watch", BENIGN, "--fail-on-new"]), 2)
+
     def test_baseline_then_new_finding(self):
         with tempfile.TemporaryDirectory() as tmp:
             state = os.path.join(tmp, "state")
@@ -65,6 +86,19 @@ class MonitorTests(unittest.TestCase):
 
 
 class SarifTests(unittest.TestCase):
+    def test_uri_classification_and_encoding(self):
+        self.assertEqual(export._uri("notes/my file#\u00e9.md"), "notes/my%20file%23%C3%A9.md")
+        self.assertEqual(export._uri("C:\\mem wall\\a#\u00e9.txt"), "file:///C:/mem%20wall/a%23%C3%A9.txt")
+        self.assertEqual(export._uri("\\\\server\\share\\a b.txt"), "file://server/share/a%20b.txt")
+        self.assertEqual(export._uri("/tmp/my file#\u00e9"), "file:///tmp/my%20file%23%C3%A9")
+        self.assertEqual(export._uri("https://example.com/a%20b"), "https://example.com/a%20b")
+
+    def test_logical_locations_is_sibling(self):
+        result = export.to_sarif(_result(POISONED))
+        loc = result["runs"][0]["results"][0]["locations"][0]
+        self.assertIn("logicalLocations", loc)
+        self.assertNotIn("logicalLocations", loc["physicalLocation"])
+
     def test_sarif_shape(self):
         doc = export.to_sarif(_result(POISONED))
         self.assertEqual(doc["version"], "2.1.0")
@@ -84,12 +118,23 @@ class SarifTests(unittest.TestCase):
             with open(path, encoding="utf-8") as fh:
                 doc = fh.read()
         self.assertIn("<!doctype html>", doc)
-        self.assertNotIn("http://", doc.split("informationUri", 1)[0] if False else "")
+        self.assertNotIn("<link ", doc)
+        self.assertNotIn("<script src=", doc)
         self.assertIn("CRITICAL", doc)
         self.assertIn("memwall report", doc)
 
 
 class ForgetTests(unittest.TestCase):
+    def test_subject_normalization_and_whitespace_error(self):
+        records = [MemoryRecord(id="1", content="Alice Smith", store="t", source="t")]
+        hits = forget.find_subject(records, ["  ALICE  "])
+        self.assertEqual(hits[0].matched, ["ALICE"])
+        with tempfile.TemporaryDirectory() as tmp:
+            store = os.path.join(tmp, "empty.jsonl")
+            open(store, "w").close()
+            with contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(cli.main(["forget-check", store, "--subject", "   "]), 2)
+
     def test_finds_and_reports_subject(self):
         records = [
             MemoryRecord(id="1", content="Alice Smith prefers email at alice@corp.com", store="t", source="t"),

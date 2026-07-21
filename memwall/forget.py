@@ -19,11 +19,11 @@ class ForgetHit:
 
 
 def find_subject(records, subjects) -> list:
-    needles = [(s, s.lower()) for s in subjects if s and s.strip()]
+    needles = [(s.strip(), s.strip().casefold()) for s in subjects if s and s.strip()]
     hits = []
     for record in records:
-        low = record.content.lower()
-        matched = [original for original, needle in needles if needle in low]
+        low = record.content.casefold()
+        matched = [label for label, needle in needles if needle in low]
         if matched:
             hits.append(ForgetHit(record=record, matched=matched))
     return hits

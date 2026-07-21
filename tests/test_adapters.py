@@ -78,6 +78,61 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(len(records), 1)
         self.assertEqual(records[0].store, "sqlite")
 
+    def test_sqlite_identifiers_with_quotes(self):
+        import sqlite3
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            db = os.path.join(tmp, "quoted.db")
+            con = sqlite3.connect(db)
+            con.execute('CREATE TABLE "mem""ories" ("col""umn" TEXT)')
+            con.execute('INSERT INTO "mem""ories" VALUES (?)', ("Quoted identifier memory",))
+            con.commit()
+            con.close()
+            records = adapters.load(db)
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0].content, "Quoted identifier memory")
+
+    def test_sqlite_uri_failure_not_retried_writable(self):
+        import sqlite3
+        import tempfile
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as tmp:
+            db = os.path.join(tmp, "missing.db")
+            with mock.patch("memwall.adapters.sqlite_store.is_sqlite", return_value=True), \
+                 mock.patch("memwall.adapters.sqlite_store.sqlite3.connect",
+                            side_effect=sqlite3.OperationalError("read-only open failed")) as connect:
+                with self.assertRaises(sqlite3.Error):
+                    adapters.load(db)
+            connect.assert_called_once()
+            self.assertTrue(connect.call_args.args[0].endswith("?mode=ro"))
+
+    def test_directory_walk_store_extension_by_magic(self):
+        import sqlite3
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            db = os.path.join(tmp, "memory.store")
+            con = sqlite3.connect(db)
+            con.execute("CREATE TABLE memories (content TEXT)")
+            con.execute("INSERT INTO memories VALUES ('Found store file')")
+            con.commit()
+            con.close()
+            records = adapters.load(tmp)
+        self.assertEqual([r.content for r in records], ["Found store file"])
+
+    def test_directory_walk_scans_large_sqlite(self):
+        import sqlite3
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            db = os.path.join(tmp, "large.db")
+            con = sqlite3.connect(db)
+            con.execute("CREATE TABLE memories (content TEXT, padding BLOB)")
+            con.execute("INSERT INTO memories VALUES (?, zeroblob(?))", ("Large database memory", 6 * 1024 * 1024))
+            con.commit()
+            con.close()
+            self.assertGreater(os.path.getsize(db), 5 * 1024 * 1024)
+            records = adapters.load(tmp)
+        self.assertIn("Large database memory", [r.content for r in records])
+
 
 if __name__ == "__main__":
     unittest.main()
