@@ -4,73 +4,95 @@
 ![python](https://img.shields.io/badge/python-3.9%2B-blue)
 ![license](https://img.shields.io/badge/license-MIT-green)
 
-**Antivirus for AI agent memory.**
+**Inspect and guard persistent AI agent memory.**
 
-Persistent memory is the newest attack surface in agentic AI. One poisoned
-memory — planted through an email, a webpage, or a document your agent read —
-survives across sessions and fires days or weeks later. OWASP added *Memory
-and Context Poisoning* to its 2026 Agentic AI Top 10 (ASI06); published
-research shows attack success rates of 80–99% against real agent stacks.
+An injected instruction can survive in an agent's memory and influence later
+tasks. An ordinary fact can also become obsolete. Memwall scans stored memory,
+guards declared MCP memory writes, and prepares offline trials to investigate
+whether one proposed memory helps or harms a particular task.
 
-memwall scans agent memory stores for injected standing orders, exfiltration
-vectors, hidden payloads, and hygiene issues like retained PII. Zero
-dependencies for the core scan.
+The core uses Python's standard library. Default scans and offline trial commands
+make no model calls. The optional Claude judge and externally run agent trials
+can incur provider charges. Memwall is a triage and enforcement layer with a
+defined boundary, not a guarantee that a memory is safe.
+
+## What's new in 0.7.0
+
+- **Explicit write contracts:** `gateway --profile reference-memory` inspects
+  related fields together, refuses unsupported calls and inspection failures,
+  and prevents claimed origins from weakening the operator's threshold.
+- **Offline behavioral trials:** `trial prepare` binds exact memory, task and
+  environment inputs; `trial report` validates external evidence and separates
+  useful effects, harm, obsolete assumptions and baseline variability.
+- **Reliable release reporting:** rejected backend writes remain pending;
+  released or dropped entries cannot be replayed through the release command.
+
+See the [changelog](CHANGELOG.md) and [trial guide](docs/TRIALS.md).
 
 ## Quickstart
 
+Install this checkout for the 0.7.0 features:
+
 ```bash
-pip install memwall
+git clone https://github.com/gbayerv26/memwall
+cd memwall
+python -m pip install -e .
 
 memwall scan path/to/memory.json          # one store or export
 memwall scan .                            # walk a project: CLAUDE.md, AGENTS.md, memory files
-memwall scan memory.json --judge          # add the Claude semantic judge (needs ANTHROPIC_API_KEY)
 memwall rules                             # list detection rules
 ```
 
-60-second demo — scan the bundled example store and watch it catch an
-invoice-exfiltration implant and a payment redirect:
+`python -m pip install memwall` installs the latest version published on PyPI,
+which can differ from this checkout. Python 3.9 or newer is required. The MCP
+reference backend example also requires Node.js and npm.
+
+Scan the bundled example store to inspect an invoice-exfiltration implant and
+a payment redirect:
 
 ```bash
-git clone https://github.com/gbayerv26/memwall && cd memwall
-pip install -e .
 memwall scan examples/
 ```
+
+The example intentionally contains malicious memories, so a nonzero scan exit
+code is expected when findings meet the configured threshold.
 
 Directory scans are memory-aware: `package.json`, `tsconfig.json`, and other
 non-memory JSON are skipped automatically, as are files over 5 MB.
 
 ## Supported stores
 
-- **MCP reference memory server** — `memory.json` / `.jsonl` of entities and observations
-- **mem0-style exports** — JSON lists of memory objects
-- **SQLite-backed stores** — Letta, mem0 history, custom agent DBs: every text
+- **MCP reference memory server:** `memory.json` / `.jsonl` of entities and observations
+- **mem0-style exports:** JSON lists of memory objects
+- **SQLite-backed stores:** Letta, mem0 history, custom agent DBs: every text
   cell in every table, auto-detected by file magic, opened read-only
-- **Agent instruction files** — `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.cursorrules`, `.mdc`
+- **Agent instruction files:** `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.cursorrules`, `.mdc`
 - **Notes / markdown memory files** and generic JSON dumps
 
 ## How it works
 
-**Pass 1 — heuristics (free, instant).** Rules MW001–MW016 catch the known
+**Pass 1: local heuristics.** Rules MW001-MW016 flag known
 shapes of memory poisoning: instruction overrides, secrecy pressure
 ("don't tell the user"), authority claims ("system note:", "developer mode"),
 payment redirection, crypto wallets, encoded payloads, zero-width/bidi hidden
 characters, chat-role smuggling (`<|im_start|>`), rendering beacons (remote
-markdown images), delayed triggers ("when the user asks about X..." — the
+markdown images), delayed triggers ("when the user asks about X...", the
 signature of implants that fire later), and PII that needs an expiry policy.
 A combo rule (MW000) escalates to CRITICAL when a standing order and an
-outbound destination appear in the same memory — the classic exfiltration
+outbound destination appear in the same memory, the classic exfiltration
 shape.
 
 Instruction files get a calibrated ruleset: imperatives are normal in a
 CLAUDE.md, so only the genuinely suspicious rules apply there.
 
-**Pass 2 — the judge (optional).** `--judge` sends flagged records to Claude
+**Pass 2: the optional judge.** `--judge` sends flagged records to Claude
 for semantic classification (`benign_fact` / `preference` / `task_context` /
-`suspicious_instruction` / `likely_injection`). The judge treats memory
-content as untrusted data and never follows instructions inside it.
+`suspicious_instruction` / `likely_injection`). Its prompt treats memory
+content as untrusted data, but its verdict can be wrong. This sends memory
+content to the configured provider and can incur API charges.
 
 ```bash
-pip install "memwall[judge]"
+python -m pip install ".[judge]"
 export ANTHROPIC_API_KEY=sk-ant-...
 memwall scan memory.json --judge
 ```
@@ -113,7 +135,7 @@ memwall scan ./agent-memory --fail-on high --json memwall-report.json
 Exit code is 1 when any finding meets the `--fail-on` threshold, so you can
 block deploys on a poisoned store.
 
-Accepted findings can be baselined so CI only fails on **new** ones — a
+Accepted findings can be baselined so CI only fails on **new** ones: a
 baselined finding stays suppressed until the memory content itself changes:
 
 ```bash
@@ -121,36 +143,42 @@ memwall scan ./agent-memory --baseline .memwall-baseline.json --update-baseline 
 memwall scan ./agent-memory --baseline .memwall-baseline.json --fail-on high -q  # gate on new findings
 ```
 
-## The gateway — quarantine before commit
+## The gateway: quarantine before storage
 
-`memwall gateway` is a transparent MCP proxy you put in front of any stdio
-memory server. Every memory write is scanned *before* it reaches the store;
-anything at or above the block threshold is quarantined instead of written,
-and the agent gets a clear "blocked, do not retry" tool response. Reads and
-all other traffic pass through untouched.
+`memwall gateway` is a stdio MCP proxy in front of a memory server. A trusted
+local profile declares which tools write memory and how to inspect their
+arguments. Declared writes are scanned before forwarding; blocking findings
+quarantine the entire call and return a tool error to the agent. Declared
+reads and maintenance calls pass through after protocol validation. Unknown
+tools and unsupported shapes are refused.
 
 ```bash
-memwall gateway --state-dir ~/.memwall -- npx -y @modelcontextprotocol/server-memory
+memwall gateway --profile reference-memory --state-dir ~/.memwall -- npx -y @modelcontextprotocol/server-memory@1.0.0
 ```
 
-Claude Desktop / Claude Code config — wrap your existing memory server:
+Claude Desktop / Claude Code config, using the bundled reference profile:
 
 ```json
 {
   "mcpServers": {
     "memory": {
       "command": "memwall",
-      "args": ["gateway", "--state-dir", "/home/you/.memwall", "--",
-               "npx", "-y", "@modelcontextprotocol/server-memory"]
+      "args": ["gateway", "--profile", "reference-memory",
+               "--state-dir", "/home/you/.memwall", "--",
+               "npx", "-y", "@modelcontextprotocol/server-memory@1.0.0"]
     }
   }
 }
 ```
 
-Writes (tool names matching create/add/store/save/write/update/remember/...)
-are scanned with the same rule engine as `memwall scan`. The gateway fails
-open on internal errors and keeps protocol traffic on stdout and diagnostics
-on stderr, so it never takes your memory server down.
+Use paths and executable names appropriate to your host. Other backends need
+a profile matching their exact tool schemas. Protocol traffic uses stdout;
+diagnostics use stderr.
+
+Omitting `--profile` retains legacy compatibility: write detection guesses from
+tool names such as create/add/store/save/write/update/remember. It can miss
+custom writers and fails open on internal scan errors. Use an explicit profile
+when inspection failures must refuse forwarding.
 
 ### Contract enforcement
 
@@ -220,14 +248,15 @@ be quarantined. Correlation covers a single request. Direct writes to the
 memory file or alternate backend connections bypass the gateway. An `allowed`
 audit event records authorization, not confirmation of durable storage.
 
-Review what happened — every write is recorded in an append-only audit trail
-with a payload hash, so you can answer "when did this belief enter memory":
+Review recognized write decisions and quarantined calls in the append-only
+audit trail. Its payload hashes identify inspected content; they do not prove
+when or whether the backend stored it:
 
 ```bash
 memwall log --state-dir ~/.memwall                # forensic event log
 memwall quarantine --state-dir ~/.memwall list    # held writes
 memwall quarantine --state-dir ~/.memwall show q1a2b3c4
-memwall quarantine --state-dir ~/.memwall release q1a2b3c4 -- npx -y @modelcontextprotocol/server-memory
+memwall quarantine --state-dir ~/.memwall release q1a2b3c4 -- npx -y @modelcontextprotocol/server-memory@1.0.0
 memwall quarantine --state-dir ~/.memwall drop q1a2b3c4
 ```
 
@@ -241,10 +270,10 @@ failed release, since a backend can fail after making partial changes.
 Run releases serially: the pending-status check is not an atomic lock across
 concurrent release processes and does not guarantee exactly-once replay.
 
-## Monitoring — catch poison the moment it lands
+## Monitoring: alert on new findings
 
 `memwall watch` re-scans a store on an interval and alerts **only on new
-findings** — the first run establishes a snapshot, every later run reports
+findings**: the first run establishes a snapshot, every later run reports
 what appeared since:
 
 ```bash
@@ -258,7 +287,7 @@ scheduled CI run, or systemd timer becomes a poisoning alarm with one line.
 ## Compliance
 
 **Right to be forgotten (GDPR Art. 17).** Erasure quietly fails in summarized
-agent memory — a name survives inside a paraphrase after the source row was
+agent memory: a name survives inside a paraphrase after the source row was
 deleted. `forget-check` checks whether supplied literal identifiers remain
 (case-insensitive); it cannot prove paraphrase or semantic erasure:
 
@@ -274,20 +303,25 @@ for GitHub code scanning and security dashboards; `--html report.html` writes
 a self-contained, dark-mode-aware report you can attach to a compliance
 ticket or email to a client.
 
-## Trust-aware policies — the provenance handshake
+## Origin policies
 
 Agents (or their harnesses) can declare where memory content came from by
 attaching MCP metadata to the write call:
 
 ```json
-{"method": "tools/call",
- "params": {"name": "add_observations",
+{"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+ "params": {"name": "create_entities",
             "_meta": {"memwall": {"origin": "web"}},
-            "arguments": {"...": "..."}}}
+            "arguments": {"entities": [
+              {"name": "reporting", "entityType": "preference",
+               "observations": ["The user prefers concise reports."]}
+            ]}}}
 ```
 
-Each origin maps to a block threshold — content from the open web is held to
-a stricter bar than something the user typed:
+Built-in origins map to these thresholds. In profile mode, the effective
+threshold is the stricter of this mapping and the operator's default. With
+the default `high` threshold, claiming `origin=user` therefore still blocks
+high-severity findings:
 
 | origin | blocks at |
 |---|---|
@@ -296,30 +330,32 @@ a stricter bar than something the user typed:
 | `tool` / `web` / `email` / `document` | medium |
 | undeclared | `--block-at` (default high) |
 
-Override with a preset — `--policy strict`, `--policy balanced`, or
-`--policy permissive` — or a JSON file:
+Override with a preset (`--policy strict`, `--policy balanced`, or
+`--policy permissive`) or a JSON file:
 
 ```json
 {"default_block_at": "high", "origins": {"web": "low", "voicemail": "low"}}
 ```
 
-Unlisted origins keep the built-in table. The declared origin is recorded on
-every event and quarantine entry, so the audit trail carries provenance. The
-`memwall` meta key is stripped before the call reaches the backend.
+Origins absent from a custom policy retain their built-in thresholds;
+unrecognized origins use the default. Origins are caller claims, not
+authenticated provenance. Profile mode records the claim and prevents it
+from relaxing the operator's threshold. Legacy mode uses the origin mapping
+directly. The `memwall` metadata key is stripped before backend forwarding.
 
 ## Judge-in-the-loop
 
 ```bash
-memwall gateway --judge -- npx -y @modelcontextprotocol/server-memory
+memwall gateway --profile reference-memory --judge -- npx -y @modelcontextprotocol/server-memory@1.0.0
 ```
 
-Without a profile, `--judge` gives flagged writes a second opinion from the Claude judge
-before quarantining. Clearing verdicts (fact / preference / task context) let
-the write through — cutting heuristic false positives without losing the
-block on real injections. If the judge is unavailable or unsure, the write
-stays quarantined (fail-safe). Needs `pip install "memwall[judge]"` and
-`ANTHROPIC_API_KEY`; adds one API call only to writes heuristics already
-flagged, so normal traffic pays zero latency.
+In profile mode, the judge is advisory and cannot clear a policy block.
+Without a profile, clearing verdicts (fact / preference / task context) can
+let a flagged write through. This can reduce false positives but can also
+clear a real injection. If the judge is unavailable or unsure, the flagged
+write stays blocked. The judge requires the optional `judge` extra and
+`ANTHROPIC_API_KEY`; consulting it sends flagged memory content to Claude and
+can incur API charges. Writes without heuristic findings make no judge calls.
 
 ## Roadmap
 
@@ -331,9 +367,19 @@ flagged, so normal traffic pays zero latency.
 
 ## Honest limitations
 
-Heuristics have false positives and false negatives by design — they are a
-triage layer, not a verdict. Review findings before deleting memories. The
-judge pass improves precision but is only as good as the model behind it.
+Heuristics have false positives and false negatives. Review findings before
+deleting memories. A judge verdict is fallible; an allowed write is not a
+safety certificate or proof of storage. Direct store access and alternate
+connections bypass the gateway. Contract grouping covers one request, not
+attacks split across separate calls.
+
+Memwall cannot observe a host agent's full context or replay an existing
+Codex or Claude session. Offline trial reports depend on a trusted external
+runner and scorer. Their hashes detect known input drift, not fabricated
+execution or hidden provider changes. The included simulation establishes
+format behavior only, not improved Astra or Opus performance.
+
+See [SECURITY.md](SECURITY.md) for the protection boundary and reporting policy.
 
 ## License
 
