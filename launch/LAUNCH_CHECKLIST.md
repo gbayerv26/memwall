@@ -21,10 +21,10 @@ Expect: 30 tests, OK.
 
 ## 2. Placeholders and project URLs — DONE
 
-All placeholders are filled with `gbayerv26` / ggbayervaldivia@gmail.com
-(README badges and clone URLs, SECURITY.md contact, CONTRIBUTING.md, launch
-copy), and `[project.urls]` + the author email are already in pyproject.toml.
-Nothing to do here.
+All placeholders use `gbayerv26` (README badges and clone URLs, CONTRIBUTING.md,
+and launch copy), and `[project.urls]` is configured in pyproject.toml.
+The package author is listed by name only. Security reports use GitHub's private
+vulnerability reporting. Use the GitHub-provided noreply address for commits.
 
 ## 3. First commit and tag
 
