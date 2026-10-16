@@ -1,6 +1,7 @@
 """Heuristic rule engine: fast, zero-dependency first pass.
 
-Each rule is a compiled regex with an id, severity, and description.
+Each rule has a regex specification, id, severity, and description. Delimiter
+rules use forward-only matchers to avoid repeatedly scanning the same suffix.
 A combo rule (MW000) escalates to CRITICAL when a record contains both a
 standing order and an outbound destination — the classic shape of a
 memory-poisoning exfiltration attack.
@@ -9,7 +10,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Callable, Iterable, Optional
 
 from .models import Finding, MemoryRecord, RecordReport, Severity
 
@@ -21,10 +22,74 @@ class Rule:
     severity: Severity
     description: str
     pattern: "re.Pattern"
+    matcher: Optional[Callable[[str], Optional["re.Match"]]] = None
+
+    def search(self, text: str) -> Optional["re.Match"]:
+        return self.matcher(text) if self.matcher else self.pattern.search(text)
 
 
 def _rx(pattern: str) -> "re.Pattern":
     return re.compile(pattern, re.IGNORECASE | re.MULTILINE)
+
+
+_SPAN = re.compile(r"[\s\S]*")
+_MARKDOWN_DESTINATION = _rx(r"\(\s*https?://")
+_IMAGE_TOKENS = _rx(r"<img|>|src=[\"']?https?://")
+
+
+def _comment_match(text: str) -> Optional["re.Match"]:
+    start = text.find("<!--")
+    if start < 0:
+        return None
+    # Every later opener needs a closer at least as far into the same suffix.
+    # Search that suffix once, including nested openers as comment content.
+    end = text.find("-->", start + 4)
+    return _SPAN.match(text, start, end + 3) if end >= 0 else None
+
+
+def _beacon_match(text: str) -> Optional["re.Match"]:
+    markdown = None
+    position = 0
+    while True:
+        start = text.find("![", position)
+        if start < 0:
+            break
+        close = text.find("]", start + 2)
+        if close < 0:
+            break
+        destination = _MARKDOWN_DESTINATION.match(text, close + 1)
+        if destination:
+            markdown = (start, destination.end())
+            break
+        # All openers before this ] share the same failed destination. Do not
+        # rescan it for each nested opener.
+        position = close + 1
+
+    html = None
+    start = end = None
+    for token in _IMAGE_TOKENS.finditer(text):
+        value = token.group(0)
+        if value == ">":
+            if end is not None:
+                html = (start, end)
+                break
+            start = None
+        elif value.startswith("<"):
+            if start is None:
+                start = token.start()
+        elif start is not None and token.start() > start + 4:
+            # Preserve [^>]+ (at least one character before src) and its
+            # greedy choice of the last matching src before the next >.
+            end = token.end()
+    else:
+        if end is not None:
+            html = (start, end)
+
+    spans = [span for span in (markdown, html) if span is not None]
+    if not spans:
+        return None
+    start, end = min(spans)
+    return _SPAN.match(text, start, end)
 
 
 RULES = [
@@ -81,13 +146,14 @@ RULES = [
              r"|\b(?:\+?\d{1,3}[\s.-])?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}\b")),
     Rule("MW013", "hidden-html-comment", Severity.LOW,
          "HTML comment invisible when the file renders as Markdown.",
-         _rx(r"<!--[\s\S]*?-->")),
+         _rx(r"<!--[\s\S]*?-->"), matcher=_comment_match),
     Rule("MW014", "role-marker-smuggling", Severity.MEDIUM,
          "Chat-template or role markers smuggled into memory content.",
          _rx(r"<\|[a-z_]{2,}\|>|\[/?INST\]|\bbegin_of_text\b|^(?:assistant|system)\s*:")),
     Rule("MW015", "rendering-beacon", Severity.MEDIUM,
          "Markdown/HTML image pointing at a remote URL - exfiltrates when rendered.",
-         _rx(r"!\[[^\]]*\]\(\s*https?://|<img[^>]+src=[\"']?https?://")),
+         _rx(r"!\[[^\]]*\]\(\s*https?://|<img[^>]+src=[\"']?https?://"),
+         matcher=_beacon_match),
     Rule("MW016", "delayed-trigger", Severity.MEDIUM,
          "Conditional trigger phrasing - the signature of memory implants that fire later.",
          _rx(r"\bwhen(?:ever)? the (?:user|owner|human|customer) (?:asks|mentions|says|requests|talks about)\b"
@@ -112,7 +178,7 @@ def evaluate(record: MemoryRecord) -> RecordReport:
     for rule in RULES:
         if kind == "instructions" and rule.id in SKIP_FOR_INSTRUCTION_FILES:
             continue
-        match = rule.pattern.search(record.content)
+        match = rule.search(record.content)
         if match:
             snippet = " ".join(match.group(0).split())[:80]
             report.findings.append(Finding(rule.id, rule.name, rule.severity, f"matched: {snippet}"))
