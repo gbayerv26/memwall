@@ -75,6 +75,35 @@ export ANTHROPIC_API_KEY=sk-ant-...
 memwall scan memory.json --judge
 ```
 
+## Offline behavioral memory trials
+
+Some memories are ordinary-looking but obsolete or harmful in a particular task.
+Use an offline trial bundle to compare the same task with and without one exact
+memory operation, plus a repeated baseline to expose variability:
+
+```bash
+memwall trial prepare manifest.json --out bundle.json
+# A trusted external evaluator runs the agents and exports traces separately.
+memwall trial report bundle.json results.json --manifest manifest.json --out report.json
+```
+
+The report checks full input/trace digests, model settings, complete paired runs,
+identical task inputs and starting environments. It separates task success,
+unsafe actions, obsolete assumptions and preferences, and rejects stale evidence.
+It never changes gateway decisions or releases quarantine. These two commands
+make **no model calls and incur no model API charges**. Actual agent evaluation
+needs an external runner and may incur charges.
+
+Try the free deterministic simulation from a source checkout:
+
+```bash
+python -m examples.trials.run_demo --out trial-demo
+```
+
+The simulation measures no AI agent. Imported real results are trusted runner
+assertions, not authenticated execution or a safety guarantee. See the
+[trial format, workflow and limitations](docs/TRIALS.md).
+
 ## CI gate
 
 ```bash
@@ -123,6 +152,74 @@ are scanned with the same rule engine as `memwall scan`. The gateway fails
 open on internal errors and keeps protocol traffic on stdout and diagnostics
 on stderr, so it never takes your memory server down.
 
+### Contract enforcement
+
+Use a local backend profile to enforce an explicit inspection boundary:
+
+```bash
+memwall gateway --profile reference-memory --state-dir ~/.memwall -- npx -y @modelcontextprotocol/server-memory@1.0.0
+```
+
+With `--profile`, exact tool roles replace name guessing. The bundled
+`reference-memory` profile covers entity creation, observation insertion,
+relation creation, graph reads/searches, and deletions. Unknown tools and
+unsupported argument shapes are refused before reaching the backend.
+Additional fields in write arguments are refused rather than silently skipped.
+
+Related fields and repeated entries for the same entity within one call are
+inspected together. An instruction and destination split across observations
+can therefore trigger the existing combination rule. Distinct entities remain
+separate. If any group blocks, the entire call is quarantined; batches are
+never partially forwarded. Quarantine entries include the original request
+and inspected JSON field paths.
+
+The operator's configured threshold is the minimum protection. Caller-declared
+origins may tighten it, but cannot relax it: claiming `origin=user` cannot
+clear a write already blocked by the operator threshold. Origin metadata is
+still a claim, not authenticated provenance.
+
+Inspection, validation, and state-write failures refuse the request. If state
+is unavailable, the gateway returns an error without claiming the content was
+quarantined. Requests are limited to 1 MiB per wire frame and 32 nesting levels.
+Duplicate object keys and non-finite JSON numbers are refused. Oversized frames
+are drained in bounded chunks so subsequent requests can be handled.
+
+In this mode `--judge` is **advisory**: it can explain findings but cannot
+override a block. Normal allowed traffic makes no judge API calls. Existing
+gateway behavior, including judge clearing and scan fail-open, remains available
+when no profile is selected.
+
+For a custom backend, provide an operator-owned JSON file. This example maps a
+custom writer to the supported observation shape and declares a reader:
+
+```json
+{
+  "version": 1,
+  "name": "custom-memory",
+  "tools": {
+    "commit_memory": "observations",
+    "preset_lookup": "read"
+  }
+}
+```
+
+```bash
+memwall gateway --profile ./memory-profile.json -- your-memory-server
+```
+
+A file replaces the entire tool map. Supported extractors are `entities`,
+`observations`, and `relations`, using the reference server's respective
+argument shapes. `read` and `maintenance` explicitly trust the backend not to
+insert new memory through those tools; custom shapes for these roles are the
+operator's responsibility. Keep profiles local and trusted. Tool descriptions,
+annotations, and request metadata cannot grant a tool an exemption.
+
+Contract enforcement strengthens inspection coverage; it does not make regex
+detection complete. Malicious paraphrases may pass and benign quotations may
+be quarantined. Correlation covers a single request. Direct writes to the
+memory file or alternate backend connections bypass the gateway. An `allowed`
+audit event records authorization, not confirmation of durable storage.
+
 Review what happened — every write is recorded in an append-only audit trail
 with a payload hash, so you can answer "when did this belief enter memory":
 
@@ -137,6 +234,12 @@ memwall quarantine --state-dir ~/.memwall drop q1a2b3c4
 `release` replays the original write to the backend after human review;
 `drop` discards it. Both decisions are appended to the audit trail, never
 rewritten over it.
+
+Release requires a pending entry and reports backend tool errors as failures.
+On failure the entry remains pending. Verify backend state before retrying a
+failed release, since a backend can fail after making partial changes.
+Run releases serially: the pending-status check is not an atomic lock across
+concurrent release processes and does not guarantee exactly-once replay.
 
 ## Monitoring — catch poison the moment it lands
 
@@ -210,7 +313,7 @@ every event and quarantine entry, so the audit trail carries provenance. The
 memwall gateway --judge -- npx -y @modelcontextprotocol/server-memory
 ```
 
-With `--judge`, flagged writes get a second opinion from the Claude judge
+Without a profile, `--judge` gives flagged writes a second opinion from the Claude judge
 before quarantining. Clearing verdicts (fact / preference / task context) let
 the write through — cutting heuristic false positives without losing the
 block on real injections. If the judge is unavailable or unsure, the write

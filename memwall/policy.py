@@ -31,6 +31,10 @@ class Policy:
     def threshold_for(self, origin: str) -> Severity:
         return self.origin_thresholds.get((origin or "unknown").lower(), self.default_block_at)
 
+    def enforcement_threshold_for(self, claimed_origin: str) -> Severity:
+        """Untrusted claims may tighten, but never relax, the operator minimum."""
+        return min(self.default_block_at, self.threshold_for(claimed_origin))
+
     @classmethod
     def from_file(cls, path: str) -> "Policy":
         with open(path, encoding="utf-8-sig") as fh:

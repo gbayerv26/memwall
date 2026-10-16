@@ -6,3 +6,8 @@ build/
 .venv/
 venv/
 memwall-report.*
+.redcon/
+.token-optimizer/
+.reference-backend/
+.memwall/
+trial-demo/

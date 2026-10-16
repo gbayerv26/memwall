@@ -33,7 +33,8 @@ class GatewayIntegrationTests(unittest.TestCase):
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
             cwd=ROOT, bufsize=0)
         self.lines = queue.Queue()
-        threading.Thread(target=self._reader, daemon=True).start()
+        self.reader = threading.Thread(target=self._reader, daemon=True)
+        self.reader.start()
 
     def tearDown(self):
         try:
@@ -44,6 +45,9 @@ class GatewayIntegrationTests(unittest.TestCase):
             self.proc.wait(timeout=10)
         except subprocess.TimeoutExpired:
             self.proc.kill()
+            self.proc.wait()
+        self.reader.join(timeout=5)
+        self.proc.stdout.close()
         self.tmp.cleanup()
 
     def _reader(self):

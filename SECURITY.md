@@ -18,8 +18,26 @@ public issue for anything exploitable. Target first response: 72 hours.
 
 ## Known, documented trade-offs (not vulnerabilities)
 
-- The gateway **fails open** on internal scan errors by design, so it never
-  takes your memory server down. Deployments that prefer fail-closed should
-  say so in an issue — it is a planned policy option.
+- Without `--profile`, the gateway **fails open** on internal scan errors.
+  Select `--profile reference-memory` or a trusted local profile to refuse
+  uninspectable requests and inspection/state failures before forwarding.
+- Profile enforcement trusts the operator's tool-role declarations, backend,
+  and filesystem. Custom `read`/`maintenance` declarations must never describe
+  tools that insert memory. Unknown tools are refused; backend upgrades may
+  require profile updates. Server annotations cannot grant an exemption.
+- Claimed origins cannot relax the operator's threshold in profile mode.
+  This is not authenticated provenance. The optional judge is advisory in
+  profile mode, since its input may be truncated and its output may be wrong.
+- Inspection groups cover related fields in a single call. Direct store
+  access, alternate connections, and attacks spanning separate calls are
+  outside this enforcement boundary. `allowed` is an authorization event,
+  not proof of storage. Quarantine files retain sensitive payloads and need
+  the same filesystem protection as the memory store.
 - Heuristics are a triage layer with false negatives by design; the judge
   pass exists to raise precision, not to guarantee it.
+- Offline trial bundles bind exact inputs and imported traces with full digests.
+  They trust the local operator, runner, scorer and filesystem. Hashes do not
+  authenticate execution, labels or provider settings. The model must not be
+  able to write trusted manifests, scorers, labels or receipts. Simulations are
+  not agent evidence, and trial reports never grant release or bypass policy.
+  Bundles and traces may contain full sensitive memory and source material.
