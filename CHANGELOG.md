@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.7.0 - 2026-10-15
+
+- Added offline `trial prepare` and `trial report` commands with byte-preserved
+  inputs, full SHA-256 bindings, repeated baseline controls, separate task and
+  risk counts, drift checks, and explicitly labeled local simulations.
+- Added a dependency-free, deterministic trial demo. The commands make no model
+  calls, execute no runner, and never change quarantine or gateway decisions.
+
+- Added opt-in memory-write contract enforcement with `gateway --profile`:
+  exact tool roles, versioned local profiles, same-entity inspection groups,
+  field-path evidence, and whole-call quarantine.
+- Enforced operator minimum thresholds despite caller-origin claims, made
+  judging advisory in profile mode, and refused unsupported or uninspectable
+  requests without forwarding. Added bounded framing and strict JSON checks.
+- Fixed quarantine release reporting success after backend tool rejection;
+  failed releases remain pending and finalized entries cannot be replayed.
+- Added contract, failure, transparency, and integration regressions while
+  preserving gateway behavior when no profile is selected.
+
 ## 0.6.1 — 2026-07-21
 
 - Isolated monitor snapshots by target, recovered safely from invalid state,

@@ -19,6 +19,15 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: Run tests
         run: python -m unittest discover -s tests -t . -v
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Install pinned reference memory server for interoperability tests
+        run: npm install --prefix .reference-backend --ignore-scripts --no-audit --no-fund --save-exact @modelcontextprotocol/server-memory@1.0.0
+      - name: Test real memory backend in an isolated store
+        env:
+          MEMWALL_REFERENCE_SERVER: .reference-backend/node_modules/@modelcontextprotocol/server-memory/dist/index.js
+        run: python -m unittest tests.test_reference_backend -v
       - name: Self-scan the example store (CI gate demo)
         run: python -m memwall scan examples --fail-on critical --quiet
         continue-on-error: true

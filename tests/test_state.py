@@ -5,6 +5,7 @@ import os
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 from memwall import cli
 from memwall.models import Finding, Severity
@@ -63,6 +64,41 @@ class StateTests(unittest.TestCase):
         self.assertEqual(len(replayed), 1)
         self.assertEqual(replayed[0]["params"]["name"], "add_observations")
         self.assertEqual(self.store.quarantine_entries()[0]["status"], "released")
+
+    def test_release_backend_error_never_marks_released(self):
+        qid = self._quarantine_entry()
+        for result in ({"isError": True, "content": []}, None, {},
+                       {"content": [], "isError": "false"}):
+            with self.subTest(result=result), mock.patch("memwall.mcp_client.MiniClient") as client:
+                client.return_value.call_tool.return_value = result
+                with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                    code = cli.main(["quarantine", "--state-dir", self.tmp.name,
+                                     "release", qid, "--", "unused"])
+                self.assertEqual(code, 1)
+                self.assertEqual(self.store.quarantine_entries()[0]["status"], "pending")
+                client.return_value.close.assert_called_once()
+
+    def test_release_protocol_failure_preserves_pending_and_closes_backend(self):
+        qid = self._quarantine_entry()
+        with mock.patch("memwall.mcp_client.MiniClient") as client:
+            client.return_value.call_tool.side_effect = RuntimeError("JSON-RPC failure")
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                code = cli.main(["quarantine", "--state-dir", self.tmp.name,
+                                 "release", qid, "--", "unused"])
+            self.assertEqual(code, 1)
+            self.assertEqual(self.store.quarantine_entries()[0]["status"], "pending")
+            client.return_value.close.assert_called_once()
+
+    def test_release_rejects_already_released_or_dropped_entries(self):
+        qid = self._quarantine_entry()
+        for status in ("released", "dropped"):
+            self.store.set_status(qid, status)
+            with self.subTest(status=status), mock.patch("memwall.mcp_client.MiniClient") as client:
+                with contextlib.redirect_stderr(io.StringIO()):
+                    code = cli.main(["quarantine", "--state-dir", self.tmp.name,
+                                     "release", qid, "--", "unused"])
+                self.assertEqual(code, 2)
+                client.assert_not_called()
 
 
 if __name__ == "__main__":

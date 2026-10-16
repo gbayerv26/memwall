@@ -83,6 +83,9 @@ def main(argv=None) -> int:
     gw_p.add_argument("--policy", metavar="NAME_OR_PATH",
                       help="preset (strict/balanced/permissive) or JSON policy file with "
                            "per-origin block thresholds (overrides --block-at)")
+    gw_p.add_argument("--profile", metavar="NAME_OR_PATH",
+                      help="enforce a local memory-write contract (reference-memory or a JSON profile); "
+                           "unknown tools and inspection failures are refused, judge is advisory")
     gw_p.add_argument("--judge", action="store_true",
                       help="consult the Claude judge before quarantining flagged writes (needs ANTHROPIC_API_KEY)")
     gw_p.add_argument("--model", default=None, help="judge model for --judge")
@@ -105,6 +108,17 @@ def main(argv=None) -> int:
                            help="backend command after --, same as the gateway wraps")
     q_drop = q_sub.add_parser("drop", help="discard an entry (kept in the audit trail)")
     q_drop.add_argument("qid")
+
+    trial_p = sub.add_parser("trial", help="prepare and report offline memory trials (no model calls)")
+    trial_sub = trial_p.add_subparsers(dest="trialcmd", required=True)
+    trial_prepare = trial_sub.add_parser("prepare", help="capture a candidate and pinned trial inputs")
+    trial_prepare.add_argument("manifest", help="version 1 local trial manifest")
+    trial_prepare.add_argument("--out", required=True, help="new bundle JSON path")
+    trial_report = trial_sub.add_parser("report", help="validate external paired-run evidence")
+    trial_report.add_argument("bundle")
+    trial_report.add_argument("results")
+    trial_report.add_argument("--manifest", required=True, help="current manifest and files to check for drift")
+    trial_report.add_argument("--out", required=True, help="new report JSON path")
 
     args = parser.parse_args(argv)
 
@@ -133,7 +147,29 @@ def main(argv=None) -> int:
         return _cmd_log(args)
     if args.command == "quarantine":
         return _cmd_quarantine(args)
+    if args.command == "trial":
+        return _cmd_trial(args)
     return 0
+
+
+def _cmd_trial(args) -> int:
+    from . import trials
+    try:
+        if args.trialcmd == "prepare":
+            value = trials.prepare(args.manifest, args.out)
+            print(f"Offline trial bundle: {value['bundle_id']}\nWritten: {args.out}")
+        else:
+            value = trials.report(args.bundle, args.results, args.manifest, args.out)
+            print(value["warning"])
+            for case in value["cases"]:
+                print(f"{case['id']}: {case['effect']} "
+                      f"(baseline disagreements: {case['baseline_disagreements']}; "
+                      f"candidate unsafe actions: {case['counts']['candidate']['unsafe_action']})")
+            print(f"Written: {args.out}. Quarantine unchanged.")
+        return 0
+    except (trials.TrialError, OSError, ValueError) as exc:
+        print(f"memwall trial: {exc}", file=sys.stderr)
+        return 2
 
 
 def _cmd_scan(args) -> int:
@@ -282,19 +318,22 @@ def _cmd_gateway(args) -> int:
     if not backend:
         print("memwall: gateway needs a backend command after --", file=sys.stderr)
         return 2
-    if args.policy:
-        from .policy import resolve
-        try:
+    try:
+        profile = None
+        if args.profile:
+            from .contracts import load_profile
+            profile = load_profile(args.profile)
+        if args.policy:
+            from .policy import resolve
             policy = resolve(args.policy)
-        except FileNotFoundError:
-            print(f"memwall: policy not found: {args.policy} "
-                  f"(use strict/balanced/permissive or a JSON file)", file=sys.stderr)
-            return 2
-    else:
-        policy = Policy(default_block_at=Severity[args.block_at.upper()])
-    gateway = Gateway(backend, state_dir=args.state_dir, policy=policy,
-                      judge_enabled=args.judge, judge_model=args.model)
-    return gateway.run()
+        else:
+            policy = Policy(default_block_at=Severity[args.block_at.upper()])
+        gateway = Gateway(backend, state_dir=args.state_dir, policy=policy,
+                          judge_enabled=args.judge, judge_model=args.model, profile=profile)
+        return gateway.run()
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:
+        print(f"memwall: gateway configuration or backend failed: {exc}", file=sys.stderr)
+        return 2
 
 
 def _cmd_log(args) -> int:
@@ -347,13 +386,26 @@ def _cmd_quarantine(args) -> int:
         if not backend:
             print("memwall: release needs the backend command after --", file=sys.stderr)
             return 2
+        if entry["status"] != "pending":
+            print(f"memwall: cannot release a {entry['status']} entry", file=sys.stderr)
+            return 2
         params = entry["request"].get("params") or {}
-        client = MiniClient(backend)
+        client = None
         try:
+            client = MiniClient(backend)
             client.initialize()
-            client.call_tool(params.get("name", ""), params.get("arguments") or {})
+            result = client.call_tool(params.get("name", ""), params.get("arguments") or {})
+            if (not isinstance(result, dict) or not isinstance(result.get("content"), list)
+                    or ("isError" in result and type(result["isError"]) is not bool)
+                    or result.get("isError")):
+                raise RuntimeError("backend did not accept the released write")
+        except (OSError, RuntimeError) as exc:
+            print(f"memwall: release failed: {exc}; entry remains pending, "
+                  "verify backend state before retrying", file=sys.stderr)
+            return 1
         finally:
-            client.close()
+            if client is not None:
+                client.close()
         store.set_status(args.qid, "released")
         print(f"released {args.qid} to backend")
         return 0
