@@ -1,5 +1,6 @@
 import contextlib
 import copy
+from dataclasses import replace
 import io
 import json
 import os
@@ -13,6 +14,7 @@ from unittest import mock
 from memwall import cli
 from memwall.contracts import MAX_REQUEST_BYTES, Profile, load_profile
 from memwall.gateway import Gateway
+from memwall.heuristics import RULES
 from memwall.models import Severity
 from memwall.policy import Policy
 from memwall.state import StateStore
@@ -177,6 +179,25 @@ class EnforcementTests(unittest.TestCase):
             self.assert_refused()
         self.assertEqual(self.gw.state.quarantine_entries()[-1]["judge"]["mode"], "advisory")
 
+    def test_replacement_matcher_exceptions_refuse_and_next_request_recovers(self):
+        def fail(text):
+            raise RuntimeError("injected delimiter matcher failure")
+
+        for rid in ("MW013", "MW015"):
+            with self.subTest(rule=rid):
+                self.pipe.seek(0)
+                self.pipe.truncate()
+                self.replies.clear()
+                rules = [replace(r, matcher=fail) if r.id == rid else r for r in RULES]
+                with mock.patch("memwall.heuristics.RULES", rules), contextlib.redirect_stderr(io.StringIO()):
+                    self.send(request(["Likes tea"]))
+                self.assert_refused()
+                self.assertEqual(self.replies[-1]["error"]["code"], -32603)
+                self.assertEqual(self.gw.state.quarantine_entries(), [])
+                self.assertEqual(self.gw.state.events()[-1]["event"], "refused")
+                self.send(request(["Likes tea"]))
+                self.assertEqual(json.loads(self.pipe.getvalue()), request(["Likes tea"]))
+
     def test_protocol_traffic_remains_transparent(self):
         messages = [
             {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}},
@@ -213,6 +234,54 @@ class EnforcementTests(unittest.TestCase):
 
 
 class ProfileCliTests(unittest.TestCase):
+    def test_near_limit_delimiter_inputs_preserve_decisions_and_following_requests(self):
+        root = os.path.dirname(os.path.dirname(__file__))
+        with tempfile.TemporaryDirectory() as tmp:
+            calls = os.path.join(tmp, "calls.jsonl")
+            state = os.path.join(tmp, "state")
+            frames, expected, forwarded = [], {}, []
+            cases = [("<!--", "-->"), ("![", "](\nHTTPS://example.invalid/image)"),
+                     ("<img ", 'src="https://example.invalid/image">')]
+            for index, (opener, closing) in enumerate(cases):
+                for closed in (False, True):
+                    rid = 10 + index * 2 + int(closed)
+                    suffix = closing if closed else ""
+                    msg = dict(request([suffix]), id=rid)
+                    overhead = len(json.dumps(msg).encode()) + 1
+                    text = opener * ((MAX_REQUEST_BYTES - overhead) // len(opener)) + suffix
+                    msg = dict(request([text]), id=rid)
+                    raw = json.dumps(msg).encode() + b"\n"
+                    self.assertLessEqual(len(raw), MAX_REQUEST_BYTES)
+                    self.assertGreater(len(raw), MAX_REQUEST_BYTES - len(opener))
+                    frames.append(raw)
+                    expected[rid] = closed
+                    if not closed:
+                        forwarded.append(msg)
+                    following = dict(request(["Likes tea"]), id=rid + 100)
+                    frames.append(json.dumps(following).encode() + b"\n")
+                    expected[rid + 100] = False
+                    forwarded.append(following)
+            # A subprocess deadline makes a quadratic regression fail without
+            # hanging the suite. The tighter latency budget is benchmarked apart
+            # from CI startup and filesystem variance.
+            p = subprocess.run([sys.executable, "-m", "memwall", "gateway", "--profile", "reference-memory",
+                                "--block-at", "low", "--state-dir", state, "--", sys.executable,
+                                os.path.join(root, "tests", "fake_backend.py"), calls],
+                               input=b"".join(frames), capture_output=True, timeout=10, cwd=root)
+            self.assertEqual(p.returncode, 0, p.stderr)
+            responses = [json.loads(line) for line in p.stdout.splitlines()]
+            self.assertEqual(len(responses), len(expected))
+            self.assertEqual({r["id"] for r in responses}, set(expected))
+            for response in responses:
+                self.assertNotIn("error", response)
+                self.assertEqual(bool(response["result"].get("isError")), expected[response["id"]])
+            with open(calls, encoding="utf-8") as fh:
+                self.assertEqual([json.loads(line) for line in fh], forwarded)
+            entries = StateStore(state).quarantine_entries()
+            self.assertEqual(len(entries), 3)
+            self.assertEqual({f["rule"] for e in entries for f in e["findings"]} & {"MW013", "MW015"},
+                             {"MW013", "MW015"})
+
     def test_invalid_profile_does_not_start_a_backend(self):
         with mock.patch("memwall.gateway.Gateway") as gateway, contextlib.redirect_stderr(io.StringIO()):
             code = cli.main(["gateway", "--profile", "missing-profile.json", "--", "unused"])

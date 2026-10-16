@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.1 - 2026-10-16
+
+- Fixed repeated suffix scanning in MW013 HTML-comment and MW015 Markdown/HTML
+  image detection. Forward-only matchers avoid quadratic work on repeated
+  unclosed delimiters, including valid gateway requests near the 1 MiB limit.
+- Preserved original match selection, spans, snippets, severities, Unicode
+  case behavior, and MW000 combination escalation.
+- Added bounded exhaustive delimiter comparisons, exact finding checks,
+  near-limit gateway regressions, and recovery after matcher exceptions.
+  Profile-mode inspection failures continue to refuse forwarding.
+
 ## 0.7.0 - 2026-10-15
 
 - Added offline `trial prepare` and `trial report` commands with byte-preserved

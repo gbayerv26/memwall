@@ -16,7 +16,21 @@ make no model calls. The optional Claude judge and externally run agent trials
 can incur provider charges. Memwall is a triage and enforcement layer with a
 defined boundary, not a guarantee that a memory is safe.
 
-## What's new in 0.7.0
+## What's new in 0.7.1
+
+- **Faster delimiter inspection:** MW013 HTML-comment and MW015 Markdown/HTML
+  image detection use forward-only scans. Repeated unclosed delimiters no
+  longer cause these detectors to repeatedly search the remaining input.
+- **Preserved detection behavior:** match selection, matched text, finding
+  snippets, severities, Unicode case handling, and MW000 escalation are retained.
+- **Stronger regression coverage:** bounded exhaustive delimiter comparisons,
+  near-1 MiB gateway requests, and matcher-exception recovery verify detection
+  behavior, whole-call quarantine, and subsequent-request handling.
+
+This addresses the two detectors' quadratic scanning paths. It does not add a
+runtime inspection timeout or change gateway policy.
+
+### Introduced in 0.7.0
 
 - **Explicit write contracts:** `gateway --profile reference-memory` inspects
   related fields together, refuses unsupported calls and inspection failures,
@@ -31,7 +45,7 @@ See the [changelog](CHANGELOG.md) and [trial guide](docs/TRIALS.md).
 
 ## Quickstart
 
-Install this checkout for the 0.7.0 features:
+Install this checkout for version 0.7.1:
 
 ```bash
 git clone https://github.com/gbayerv26/memwall
