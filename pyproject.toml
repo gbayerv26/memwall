@@ -9,7 +9,7 @@ description = "Scanner for AI agent memory stores: detects memory poisoning, inj
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.9"
-authors = [{ name = "Gary Bayer Valdivia", email = "ggbayervaldivia@gmail.com" }]
+authors = [{ name = "Gary Bayer Valdivia" }]
 keywords = ["ai-agents", "security", "memory", "memory-poisoning", "prompt-injection", "llm"]
 classifiers = [
     "Development Status :: 3 - Alpha",

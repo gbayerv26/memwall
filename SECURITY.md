@@ -5,9 +5,9 @@ especially welcome — including heuristic bypasses.
 
 ## Reporting a vulnerability
 
-Please use GitHub's private vulnerability reporting on this repository
-(Security tab -> Report a vulnerability), or email ggbayervaldivia@gmail.com. Do not open a
-public issue for anything exploitable. Target first response: 72 hours.
+Please use [GitHub's private vulnerability reporting](https://github.com/gbayerv26/memwall/security/advisories/new)
+on this repository (Security tab -> Report a vulnerability). Do not open a public
+issue for anything exploitable. Target first response: 72 hours.
 
 ## In scope
 
