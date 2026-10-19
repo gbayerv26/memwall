@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "memwall"
-version = "0.7.1"
+version = "0.8.0"
 description = "Scanner for AI agent memory stores: detects memory poisoning, injected instructions, and hygiene issues."
 readme = "README.md"
 license = { text = "MIT" }

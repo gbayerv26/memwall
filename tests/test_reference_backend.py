@@ -48,6 +48,7 @@ class ReferenceBackendTests(unittest.TestCase):
         self.reader.start()
         self.addCleanup(self._close)
         self.rid = 0
+        self.traffic = []
         result = self.request("initialize", {
             "protocolVersion": "2025-06-18", "capabilities": {},
             "clientInfo": {"name": "memwall-integration", "version": "1"}})
@@ -69,6 +70,7 @@ class ReferenceBackendTests(unittest.TestCase):
         self.proc.stdout.close()
 
     def _send(self, msg):
+        self.traffic.append({"direction": "request", "message": msg})
         self.proc.stdin.write((json.dumps(msg) + "\n").encode())
         self.proc.stdin.flush()
 
@@ -83,6 +85,7 @@ class ReferenceBackendTests(unittest.TestCase):
                 break
             msg = json.loads(line)
             if msg.get("id") == self.rid:
+                self.traffic.append({"direction": "response", "message": msg})
                 return msg
         self.fail(f"no response for {method}, backend exit={self.proc.poll()}")
 
@@ -163,8 +166,39 @@ class ReferenceBackendTests(unittest.TestCase):
             code = cli.main(["quarantine", "--state-dir", str(self.state), "release", qid,
                              "--", NODE, self.server])
         self.assertEqual(code, 1)
-        self.assertEqual(store.quarantine_entries()[0]["status"], "pending")
+        self.assertEqual(store.quarantine_entries()[0]["status"], "uncertain")
         self.assertEqual(self.graph()["entities"], [])
+        self._release_evidence("reference-rejection", store, code)
+
+    def _release_evidence(self, name, store, code):
+        directory = os.environ.get("MEMWALL_EVIDENCE_DIR")
+        if directory:
+            target = pathlib.Path(directory)
+            target.mkdir(parents=True, exist_ok=True)
+            (target / (name + ".json")).write_text(json.dumps({
+                "release_exit": code, "traffic": self.traffic,
+                "journal": pathlib.Path(store.quarantine_path).read_text(encoding="utf-8"),
+                "backend_bytes": self.memory.read_text(encoding="utf-8") if self.memory.exists() else ""
+            }, indent=2), encoding="utf-8")
+
+    def test_successful_release_readback_and_replay_refusal(self):
+        self.assertEqual(self.graph()["entities"], [])
+        store = StateStore(str(self.state))
+        arguments = {"entities": [{"name": "approved", "entityType": "synthetic",
+                                   "observations": ["Operator-reviewed synthetic observation"]}]}
+        qid = store.quarantine("create_entities", {"jsonrpc": "2.0", "id": 9,
+            "method": "tools/call", "params": {"name": "create_entities", "arguments": arguments}}, [])
+        command = ["quarantine", "--state-dir", str(self.state), "release", qid, "--", NODE, self.server]
+        with mock.patch.dict(os.environ, {"MEMORY_FILE_PATH": str(self.memory)}), \
+                contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            code = cli.main(command)
+            self.assertEqual(code, 0)
+            before_replay = self.memory.read_bytes()
+            self.assertEqual(cli.main(command), 2)
+            self.assertEqual(self.memory.read_bytes(), before_replay)
+        self.assertEqual(store.quarantine_entries()[0]["status"], "released")
+        self.assertEqual(self.graph(), dict(arguments, relations=[]))
+        self._release_evidence("reference-success", store, code)
 
 
 if __name__ == "__main__":

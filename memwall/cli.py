@@ -108,6 +108,12 @@ def main(argv=None) -> int:
                            help="backend command after --, same as the gateway wraps")
     q_drop = q_sub.add_parser("drop", help="discard an entry (kept in the audit trail)")
     q_drop.add_argument("qid")
+    q_reconcile = q_sub.add_parser("reconcile", help="record operator-verified backend outcome after uncertainty")
+    q_reconcile.add_argument("qid")
+    q_reconcile.add_argument("--outcome", choices=["applied", "not-applied"], required=True)
+    q_reconcile.add_argument("--reason", required=True, help="backend read-back evidence and reason")
+    q_reconcile.add_argument("--backend-quiesced", action="store_true",
+                             help="confirm prior backend work is stopped/drained before not-applied recovery")
 
     trial_p = sub.add_parser("trial", help="prepare and report offline memory trials (no model calls)")
     trial_sub = trial_p.add_subparsers(dest="trialcmd", required=True)
@@ -352,7 +358,16 @@ def _cmd_log(args) -> int:
 
 
 def _cmd_quarantine(args) -> int:
-    from .state import StateStore
+    from .state import StateError
+    try:
+        return _quarantine_operation(args)
+    except (StateError, OSError) as exc:
+        print(f"memwall quarantine: {exc}", file=sys.stderr)
+        return 2
+
+
+def _quarantine_operation(args) -> int:
+    from .state import StateStore, StateError
     store = StateStore(args.state_dir)
     entries = {e["qid"]: e for e in store.quarantine_entries()}
 
@@ -375,40 +390,73 @@ def _cmd_quarantine(args) -> int:
         print(json.dumps(entry, indent=2, ensure_ascii=False))
         return 0
 
-    if args.qcmd == "drop":
-        store.set_status(args.qid, "dropped")
-        print(f"dropped {args.qid}")
-        return 0
-
     if args.qcmd == "release":
-        from .mcp_client import MiniClient
         backend = _strip_dashes(args.backend)
         if not backend:
             print("memwall: release needs the backend command after --", file=sys.stderr)
             return 2
+    # The entry lock is held across dispatch and completion, never the journal lock.
+    # A crashed process loses its OS lock, but leaves its durable reservation.
+    with store.entry_lock(args.qid):
+        entry = next(e for e in store.quarantine_entries() if e["qid"] == args.qid)
+        if args.qcmd == "reconcile":
+            if entry["status"] not in ("releasing", "uncertain") or not args.reason.strip():
+                raise StateError("reconcile needs an interrupted/uncertain entry and a nonempty reason")
+            if args.outcome == "not-applied" and not args.backend_quiesced:
+                raise StateError("not-applied recovery requires --backend-quiesced: stop/drain all prior "
+                                 "backend work, then verify no full or partial effects remain")
+            status = "released" if args.outcome == "applied" else "pending"
+            store.set_status(args.qid, status, attempt=entry["release"]["attempt"],
+                             outcome=args.outcome, reason=args.reason.strip(),
+                             backend_quiesced=args.backend_quiesced)
+            print(f"reconciled {args.qid} as {status}; operator-verified outcome: {args.outcome}")
+            return 0
         if entry["status"] != "pending":
-            print(f"memwall: cannot release a {entry['status']} entry", file=sys.stderr)
-            return 2
-        params = entry["request"].get("params") or {}
-        client = None
+            raise StateError(f"cannot {args.qcmd} a {entry['status']} entry; "
+                             "for releasing/uncertain entries verify backend state and reconcile first")
+        if args.qcmd == "drop":
+            store.set_status(args.qid, "dropped")
+            print(f"dropped {args.qid}")
+            return 0
+        return _release_quarantine(store, entry, backend)
+
+
+def _release_quarantine(store, entry, backend) -> int:
+    import uuid
+    from .mcp_client import MiniClient, successful_tool_result
+    qid = entry["qid"]
+    attempt = uuid.uuid4().hex
+    store.set_status(qid, "releasing", attempt=attempt)
+    params = entry["request"]["params"]
+    client, dispatched = None, False
+    try:
+        client = MiniClient(backend)
+        client.initialize()
+        dispatched = True  # Set before any request bytes can reach the backend.
+        result = client.call_tool(params["name"], params["arguments"])
+        if not successful_tool_result(result):
+            raise RuntimeError("backend did not acknowledge successful tool completion")
+        store.set_status(qid, "released", attempt=attempt)
+    except (OSError, RuntimeError, ValueError) as exc:
+        status = "uncertain" if dispatched else "pending"
         try:
-            client = MiniClient(backend)
-            client.initialize()
-            result = client.call_tool(params.get("name", ""), params.get("arguments") or {})
-            if (not isinstance(result, dict) or not isinstance(result.get("content"), list)
-                    or ("isError" in result and type(result["isError"]) is not bool)
-                    or result.get("isError")):
-                raise RuntimeError("backend did not accept the released write")
-        except (OSError, RuntimeError) as exc:
-            print(f"memwall: release failed: {exc}; entry remains pending, "
-                  "verify backend state before retrying", file=sys.stderr)
-            return 1
-        finally:
-            if client is not None:
+            store.set_status(qid, status, attempt=attempt,
+                             reason=str(exc) if dispatched else "not-dispatched")
+        except (OSError, RuntimeError, ValueError) as state_exc:
+            print(f"memwall: could not record release outcome: {state_exc}", file=sys.stderr)
+        if dispatched:
+            detail = "outcome uncertain; do not replay; verify backend state and reconcile"
+        else:
+            detail = "tool call was not dispatched; entry may be retried only if pending"
+        print(f"memwall: release failed: {exc}; {detail}", file=sys.stderr)
+        return 1
+    finally:
+        if client is not None:
+            try:
                 client.close()
-        store.set_status(args.qid, "released")
-        print(f"released {args.qid} to backend")
-        return 0
+            except (OSError, RuntimeError) as exc:
+                print(f"memwall: backend cleanup failed: {exc}", file=sys.stderr)
+    print(f"released {qid}: backend acknowledged completion (persistence not independently verified)")
     return 0
 
 

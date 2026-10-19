@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.8.0 - 2026-10-19
+
+- Preserve identical quarantine operations under distinct random IDs and refuse
+  collisions instead of replacing entries during journal folding.
+- Reserve and fsync release attempts before backend startup; per-entry OS locks
+  serialize release, drop, and reconciliation across cooperating processes.
+- Block replay after uncertain or interrupted attempts, including response loss
+  and completion-record failure. Backend rejection after dispatch is uncertain
+  because partial effects cannot be excluded.
+- Add operator reconciliation with recorded outcome/reason. Reopening an entry
+  requires explicit confirmation that prior backend work has stopped or drained.
+- Refuse malformed, truncated, duplicated, or unsupported quarantine records;
+  preserve healthy legacy entries. Do not share upgraded state with older binaries.
+- Validate JSON-RPC acknowledgements and supported tool-content structures; send
+  complete requests even when pipe writes are partial.
+- Add baseline/final failure evidence, crash/concurrency regressions, and pinned
+  real-backend release/read-back checks. No exactly-once or agent-safety claim.
+
 ## 0.7.1 - 2026-10-16
 
 - Fixed repeated suffix scanning in MW013 HTML-comment and MW015 Markdown/HTML
