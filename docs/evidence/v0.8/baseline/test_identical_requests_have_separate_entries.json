@@ -1,0 +1,12 @@
+{
+  "observed": {
+    "ids": [
+      "qc87dd4c1",
+      "qc87dd4c1"
+    ],
+    "entries": 1
+  },
+  "raw_files": {
+    "state/quarantine.jsonl": "{\"type\": \"entry\", \"qid\": \"qc87dd4c1\", \"ts\": \"2026-10-19T00:00:00Z\", \"tool\": \"add_observations\", \"request\": {\"jsonrpc\": \"2.0\", \"id\": 9, \"method\": \"tools/call\", \"params\": {\"name\": \"add_observations\", \"arguments\": {\"contents\": [\"synthetic observation\"]}}}, \"findings\": []}\r\n{\"type\": \"entry\", \"qid\": \"qc87dd4c1\", \"ts\": \"2026-10-19T00:00:00Z\", \"tool\": \"add_observations\", \"request\": {\"jsonrpc\": \"2.0\", \"id\": 9, \"method\": \"tools/call\", \"params\": {\"name\": \"add_observations\", \"arguments\": {\"contents\": [\"synthetic observation\"]}}}, \"findings\": []}\r\n"
+  }
+}

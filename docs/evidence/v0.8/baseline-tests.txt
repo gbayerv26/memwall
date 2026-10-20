@@ -1,0 +1,61 @@
+test_completion_record_failure_cannot_replay_effect (tests.test_release_reliability.ReleaseReliabilityTests.test_completion_record_failure_cannot_replay_effect) ... FAIL
+test_concurrent_release_dispatches_once (tests.test_release_reliability.ReleaseReliabilityTests.test_concurrent_release_dispatches_once) ... FAIL
+test_identical_requests_have_separate_entries (tests.test_release_reliability.ReleaseReliabilityTests.test_identical_requests_have_separate_entries) ... FAIL
+test_lost_response_cannot_replay_effect (tests.test_release_reliability.ReleaseReliabilityTests.test_lost_response_cannot_replay_effect) ... FAIL
+test_truncated_status_prevents_release (tests.test_release_reliability.ReleaseReliabilityTests.test_truncated_status_prevents_release) ... FAIL
+
+======================================================================
+FAIL: test_completion_record_failure_cannot_replay_effect (tests.test_release_reliability.ReleaseReliabilityTests.test_completion_record_failure_cannot_replay_effect)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Gary\AppData\Local\Temp\memwall-v071-evidence-g1sv7onc\tests\test_release_reliability.py", line 147, in test_completion_record_failure_cannot_replay_effect
+    self.assertNotEqual(second["exit"], 0)
+AssertionError: 0 == 0
+
+======================================================================
+FAIL: test_concurrent_release_dispatches_once (tests.test_release_reliability.ReleaseReliabilityTests.test_concurrent_release_dispatches_once)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Gary\AppData\Local\Temp\memwall-v071-evidence-g1sv7onc\tests\test_release_reliability.py", line 119, in test_concurrent_release_dispatches_once
+    self.assertEqual(sorted(p.returncode for p in procs), [0, 2])
+AssertionError: Lists differ: [0, 0] != [0, 2]
+
+First differing element 1:
+0
+2
+
+- [0, 0]
+?     ^
+
++ [0, 2]
+?     ^
+
+
+======================================================================
+FAIL: test_identical_requests_have_separate_entries (tests.test_release_reliability.ReleaseReliabilityTests.test_identical_requests_have_separate_entries)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Gary\AppData\Local\Temp\memwall-v071-evidence-g1sv7onc\tests\test_release_reliability.py", line 77, in test_identical_requests_have_separate_entries
+    self.assertNotEqual(*ids)
+AssertionError: 'qc87dd4c1' == 'qc87dd4c1'
+
+======================================================================
+FAIL: test_lost_response_cannot_replay_effect (tests.test_release_reliability.ReleaseReliabilityTests.test_lost_response_cannot_replay_effect)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Gary\AppData\Local\Temp\memwall-v071-evidence-g1sv7onc\tests\test_release_reliability.py", line 88, in test_lost_response_cannot_replay_effect
+    self.assertNotEqual(second["exit"], 0)
+AssertionError: 0 == 0
+
+======================================================================
+FAIL: test_truncated_status_prevents_release (tests.test_release_reliability.ReleaseReliabilityTests.test_truncated_status_prevents_release)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Gary\AppData\Local\Temp\memwall-v071-evidence-g1sv7onc\tests\test_release_reliability.py", line 98, in test_truncated_status_prevents_release
+    self.assertNotEqual(result["exit"], 0)
+AssertionError: 0 == 0
+
+----------------------------------------------------------------------
+Ran 5 tests in 1.640s
+
+FAILED (failures=5)

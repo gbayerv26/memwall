@@ -1,0 +1,13 @@
+{
+  "observed": {
+    "release": {
+      "exit": 2,
+      "stdout": "",
+      "stderr": "memwall quarantine: quarantine journal invalid at line 2: incomplete record; preserve the journal and review it before recovery\n"
+    },
+    "effect_count": 0
+  },
+  "raw_files": {
+    "state/quarantine.jsonl": "{\"version\": 2, \"type\": \"entry\", \"qid\": \"q0c76a8904a1d4f09b644d974c4c29671\", \"ts\": \"2026-10-19T18:38:01Z\", \"tool\": \"add_observations\", \"request\": {\"jsonrpc\": \"2.0\", \"id\": 9, \"method\": \"tools/call\", \"params\": {\"name\": \"add_observations\", \"arguments\": {\"contents\": [\"synthetic observation\"]}}}, \"findings\": []}\n{\"type\":\"status\",\"qid\":\""
+  }
+}

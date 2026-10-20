@@ -1,0 +1,2 @@
+scanned 8 memories from 1 source(s)
+flagged 2 of 8: 1 critical, 1 high

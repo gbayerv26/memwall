@@ -1,0 +1,84 @@
+{
+  "release_exit": 1,
+  "traffic": [
+    {
+      "direction": "request",
+      "message": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {
+          "protocolVersion": "2025-06-18",
+          "capabilities": {},
+          "clientInfo": {
+            "name": "memwall-integration",
+            "version": "1"
+          }
+        }
+      }
+    },
+    {
+      "direction": "response",
+      "message": {
+        "result": {
+          "protocolVersion": "2025-06-18",
+          "capabilities": {
+            "tools": {
+              "listChanged": true
+            },
+            "resources": {
+              "listChanged": true,
+              "subscribe": true
+            }
+          },
+          "serverInfo": {
+            "name": "memory-server",
+            "version": "1.0.0"
+          }
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    },
+    {
+      "direction": "request",
+      "message": {
+        "jsonrpc": "2.0",
+        "method": "notifications/initialized"
+      }
+    },
+    {
+      "direction": "request",
+      "message": {
+        "jsonrpc": "2.0",
+        "id": 2,
+        "method": "tools/call",
+        "params": {
+          "name": "read_graph",
+          "arguments": {}
+        }
+      }
+    },
+    {
+      "direction": "response",
+      "message": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"entities\": [],\n  \"relations\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "entities": [],
+            "relations": []
+          }
+        },
+        "jsonrpc": "2.0",
+        "id": 2
+      }
+    }
+  ],
+  "journal": "{\"version\": 2, \"type\": \"entry\", \"qid\": \"q8648d602fa3549a7af52ddd9d057ac0d\", \"ts\": \"2026-10-19T18:37:58Z\", \"tool\": \"add_observations\", \"request\": {\"jsonrpc\": \"2.0\", \"id\": 9, \"method\": \"tools/call\", \"params\": {\"name\": \"add_observations\", \"arguments\": {\"observations\": [{\"entityName\": \"nonexistent\", \"contents\": [\"Likes tea\"]}]}}}, \"findings\": []}\n{\"version\": 2, \"type\": \"status\", \"qid\": \"q8648d602fa3549a7af52ddd9d057ac0d\", \"ts\": \"2026-10-19T18:37:58Z\", \"status\": \"releasing\", \"previous\": \"pending\", \"attempt\": \"0978f0c0e7bf455c800acb1271427acc\"}\n{\"version\": 2, \"type\": \"status\", \"qid\": \"q8648d602fa3549a7af52ddd9d057ac0d\", \"ts\": \"2026-10-19T18:37:58Z\", \"status\": \"uncertain\", \"previous\": \"releasing\", \"attempt\": \"0978f0c0e7bf455c800acb1271427acc\", \"reason\": \"backend did not acknowledge successful tool completion\"}\n",
+  "backend_bytes": ""
+}

@@ -1,0 +1,88 @@
+{
+  "baseline_commit": "ce44f5359cccf77e0f04dade76a4f74b092d5565",
+  "implementation_commit": "07f809d50e2768bc7d219c1ad84c0a79794a7680",
+  "created_utc": "2026-10-19T18:38:06.697890+00:00",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "python_executable": "C:\\Users\\Gary\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+  "node": "v24.18.0",
+  "backend": {
+    "package": "@modelcontextprotocol/server-memory",
+    "version": "1.0.0",
+    "sha256": "3152ff0b3df6d345ffd67270053c3287d7e8cb8a24d832d18e8eadc5ffd10a08"
+  },
+  "checks": [
+    {
+      "name": "full-suite",
+      "command": [
+        "C:\\Users\\Gary\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-t",
+        ".",
+        "-v"
+      ],
+      "exit_code": 0,
+      "expected_exit": 0
+    },
+    {
+      "name": "version",
+      "command": [
+        "C:\\Users\\Gary\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-m",
+        "memwall",
+        "--version"
+      ],
+      "exit_code": 0,
+      "expected_exit": 0
+    },
+    {
+      "name": "example-scan",
+      "command": [
+        "C:\\Users\\Gary\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+        "-m",
+        "memwall",
+        "scan",
+        "examples",
+        "--fail-on",
+        "critical",
+        "--quiet"
+      ],
+      "exit_code": 1,
+      "expected_exit": 1
+    },
+    {
+      "name": "diff-check",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "expected_exit": 0
+    }
+  ],
+  "not_run": [
+    "Hosted CI Ubuntu/Windows Python 3.9/3.13 matrix",
+    "Real-agent/provider evaluation",
+    "Hardware power-loss testing",
+    "Wheel build/install verification unavailable: host has no setuptools and isolated build-requirement downloads timed out"
+  ],
+  "review": "One separate read-only assistant review; four findings addressed with focused regressions; not external security certification",
+  "suite": {
+    "tests": 150,
+    "skips": 0,
+    "failures": 0,
+    "errors": 0,
+    "exit_code": 0
+  },
+  "baseline_comparison": {
+    "tests": 5,
+    "failures": 5,
+    "exit_code": 1
+  },
+  "verified_source_clean": true
+}

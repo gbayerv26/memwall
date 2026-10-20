@@ -1,0 +1,2 @@
+Processing c:\users\gary\desktop\claude\new app\memwall
+  Installing build dependencies: started
