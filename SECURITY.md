@@ -33,6 +33,21 @@ issue for anything exploitable. Target first response: 72 hours.
   outside this enforcement boundary. `allowed` is an authorization event,
   not proof of storage. Quarantine files retain sensitive payloads and need
   the same filesystem protection as the memory store.
+- Quarantine release uses a durable reservation and local per-entry advisory
+  locks across cooperating v0.8 processes. A dispatched failure can have zero,
+  partial, or full backend effects. Uncertain/interrupted attempts cannot replay
+  until operator reconciliation. Before reopening one as not applied, stop/drain
+  prior backend work, including orphaned processes, and verify no effects remain.
+  The `--backend-quiesced` flag is an operator assertion, not process verification.
+  A successful release records structural backend acknowledgement, not proof of
+  persistence. There is no distributed transaction or exactly-once guarantee.
+- State must be on a trusted local filesystem supporting advisory locks and
+  fsync. Stop older binaries before upgrading and back up state. Malformed
+  quarantine records fail closed without repair. This detects malformed records,
+  not deletion/rollback of complete records or malicious filesystem edits. Power
+  loss, unsupported network filesystems, and noncooperating writers are outside
+  the process-crash/concurrency guarantee. Release can wait on an unresponsive
+  backend; interruption leaves an entry requiring recovery.
 - Heuristics are a triage layer with false negatives by design; the judge
   pass exists to raise precision, not to guarantee it.
 - Offline trial bundles bind exact inputs and imported traces with full digests.

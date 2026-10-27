@@ -1,0 +1,21 @@
+{
+  "observed": {
+    "first": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "memwall: release failed: backend closed while waiting for tools/call; outcome uncertain; do not replay; verify backend state and reconcile\n"
+    },
+    "second": {
+      "exit": 2,
+      "stdout": "",
+      "stderr": "memwall quarantine: cannot release a uncertain entry; for releasing/uncertain entries verify backend state and reconcile first\n"
+    },
+    "status": "uncertain",
+    "effect_count": 1
+  },
+  "raw_files": {
+    "effects.jsonl": "{\"jsonrpc\": \"2.0\", \"id\": 2, \"method\": \"tools/call\", \"params\": {\"name\": \"add_observations\", \"arguments\": {\"contents\": [\"synthetic observation\"]}}}\r\n",
+    "wire-25752.jsonl": "{\"direction\": \"request\", \"message\": {\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"initialize\", \"params\": {\"protocolVersion\": \"2025-06-18\", \"capabilities\": {}, \"clientInfo\": {\"name\": \"memwall\", \"version\": \"0.8.0\"}}}, \"raw\": \"{\\\"jsonrpc\\\": \\\"2.0\\\", \\\"id\\\": 1, \\\"method\\\": \\\"initialize\\\", \\\"params\\\": {\\\"protocolVersion\\\": \\\"2025-06-18\\\", \\\"capabilities\\\": {}, \\\"clientInfo\\\": {\\\"name\\\": \\\"memwall\\\", \\\"version\\\": \\\"0.8.0\\\"}}}\\n\"}\r\n{\"direction\": \"response\", \"message\": {\"jsonrpc\": \"2.0\", \"id\": 1, \"result\": {\"protocolVersion\": \"2025-06-18\", \"capabilities\": {\"tools\": {}}, \"serverInfo\": {\"name\": \"counting-fixture\", \"version\": \"1\"}}}, \"raw\": \"{\\\"jsonrpc\\\": \\\"2.0\\\", \\\"id\\\": 1, \\\"result\\\": {\\\"protocolVersion\\\": \\\"2025-06-18\\\", \\\"capabilities\\\": {\\\"tools\\\": {}}, \\\"serverInfo\\\": {\\\"name\\\": \\\"counting-fixture\\\", \\\"version\\\": \\\"1\\\"}}}\\n\"}\r\n{\"direction\": \"request\", \"message\": {\"jsonrpc\": \"2.0\", \"method\": \"notifications/initialized\"}, \"raw\": \"{\\\"jsonrpc\\\": \\\"2.0\\\", \\\"method\\\": \\\"notifications/initialized\\\"}\\n\"}\r\n{\"direction\": \"request\", \"message\": {\"jsonrpc\": \"2.0\", \"id\": 2, \"method\": \"tools/call\", \"params\": {\"name\": \"add_observations\", \"arguments\": {\"contents\": [\"synthetic observation\"]}}}, \"raw\": \"{\\\"jsonrpc\\\": \\\"2.0\\\", \\\"id\\\": 2, \\\"method\\\": \\\"tools/call\\\", \\\"params\\\": {\\\"name\\\": \\\"add_observations\\\", \\\"arguments\\\": {\\\"contents\\\": [\\\"synthetic observation\\\"]}}}\\n\"}\r\n",
+    "state/quarantine.jsonl": "{\"version\": 2, \"type\": \"entry\", \"qid\": \"qd9373a9e9ee347159e76ae88b528c4a4\", \"ts\": \"2026-10-19T18:38:01Z\", \"tool\": \"add_observations\", \"request\": {\"jsonrpc\": \"2.0\", \"id\": 9, \"method\": \"tools/call\", \"params\": {\"name\": \"add_observations\", \"arguments\": {\"contents\": [\"synthetic observation\"]}}}, \"findings\": []}\n{\"version\": 2, \"type\": \"status\", \"qid\": \"qd9373a9e9ee347159e76ae88b528c4a4\", \"ts\": \"2026-10-19T18:38:01Z\", \"status\": \"releasing\", \"previous\": \"pending\", \"attempt\": \"1068cae70e254250a1f2eea910714d79\"}\n{\"version\": 2, \"type\": \"status\", \"qid\": \"qd9373a9e9ee347159e76ae88b528c4a4\", \"ts\": \"2026-10-19T18:38:01Z\", \"status\": \"uncertain\", \"previous\": \"releasing\", \"attempt\": \"1068cae70e254250a1f2eea910714d79\", \"reason\": \"backend closed while waiting for tools/call\"}\n"
+  }
+}

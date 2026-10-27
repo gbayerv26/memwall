@@ -16,7 +16,20 @@ make no model calls. The optional Claude judge and externally run agent trials
 can incur provider charges. Memwall is a triage and enforcement layer with a
 defined boundary, not a guarantee that a memory is safe.
 
-## What's new in 0.7.1
+## What's new in 0.8.0
+
+- **Separate quarantine operations:** identical requests receive distinct IDs;
+  journal collisions and malformed records refuse further quarantine mutation.
+- **Reserved release attempts:** durable state and per-entry process locks stop
+  concurrent release, drop, or reconciliation from replaying an active entry.
+- **Conservative recovery:** lost responses, backend errors, and interrupted
+  attempts require explicit operator reconciliation before another release.
+  Backend acknowledgement is not independent proof of storage.
+
+See the [release contract and evidence](docs/QUARANTINE_V08.md) for state
+transitions, recovery, compatibility, and reproducible verification.
+
+### Introduced in 0.7.1
 
 - **Faster delimiter inspection:** MW013 HTML-comment and MW015 Markdown/HTML
   image detection use forward-only scans. Repeated unclosed delimiters no
@@ -38,14 +51,14 @@ runtime inspection timeout or change gateway policy.
 - **Offline behavioral trials:** `trial prepare` binds exact memory, task and
   environment inputs; `trial report` validates external evidence and separates
   useful effects, harm, obsolete assumptions and baseline variability.
-- **Reliable release reporting:** rejected backend writes remain pending;
-  released or dropped entries cannot be replayed through the release command.
+- **Release result reporting:** backend rejections are reported as failures;
+  v0.8 adds uncertainty handling and concurrency protection to this workflow.
 
 See the [changelog](CHANGELOG.md) and [trial guide](docs/TRIALS.md).
 
 ## Quickstart
 
-Install this checkout for version 0.7.1:
+Install this checkout for version 0.8.0:
 
 ```bash
 git clone https://github.com/gbayerv26/memwall
@@ -278,11 +291,37 @@ memwall quarantine --state-dir ~/.memwall drop q1a2b3c4
 `drop` discards it. Both decisions are appended to the audit trail, never
 rewritten over it.
 
-Release requires a pending entry and reports backend tool errors as failures.
-On failure the entry remains pending. Verify backend state before retrying a
-failed release, since a backend can fail after making partial changes.
-Run releases serially: the pending-status check is not an atomic lock across
-concurrent release processes and does not guarantee exactly-once replay.
+Release requires a pending entry. A durable `releasing` reservation and an
+OS-owned entry lock precede backend startup. Concurrent release, drop, and
+reconciliation refuse that active entry. Valid supported backend success marks
+it `released`; tool errors, malformed results, or lost responses mark it
+`uncertain`. A killed process may leave `releasing`. Neither state can be
+released or dropped directly. Failures before tool dispatch can return to
+`pending`. A completion-record failure can leave a reservation or a completed
+record, so inspect `show` after any error.
+
+After an uncertain/interrupted attempt, inspect the intended backend and store.
+If its full intended effect is confirmed, record the operator's observation:
+
+```bash
+memwall quarantine --state-dir ~/.memwall reconcile QID --outcome applied --reason "Read-back confirms the reviewed operation"
+```
+
+Before declaring it not applied, stop or drain all prior backend work, including
+orphaned processes and asynchronous work. Confirm no full or partial effects
+remain. Only then reopen the entry with an explicit attestation:
+
+```bash
+memwall quarantine --state-dir ~/.memwall reconcile QID --outcome not-applied --backend-quiesced --reason "Prior work stopped; backend read-back confirms no remaining effects"
+```
+
+Reconciliation trusts the operator; Memwall does not verify this assertion.
+Partial or unverifiable outcomes must stay unresolved until reviewed. This
+prevents automatic replay, but does not promise exactly-once backend effects.
+Use a local state filesystem with working advisory locks. Healthy legacy entries
+are supported, but back up state before upgrading and stop older Memwall
+processes. Do not use older binaries against v0.8 state. Invalid journals are
+refused without automatic repair; preserve them for manual review.
 
 ## Monitoring: alert on new findings
 

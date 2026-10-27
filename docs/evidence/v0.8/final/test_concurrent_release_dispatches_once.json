@@ -1,0 +1,22 @@
+{
+  "observed": {
+    "processes": [
+      {
+        "exit": 0,
+        "stdout": "released q4f4d71b9be7940a2af11a3981bb0bed8: backend acknowledged completion (persistence not independently verified)\r\n",
+        "stderr": ""
+      },
+      {
+        "exit": 2,
+        "stdout": "",
+        "stderr": "memwall quarantine: quarantine state busy or lock unavailable\r\n"
+      }
+    ],
+    "effect_count": 1
+  },
+  "raw_files": {
+    "effects.jsonl": "{\"jsonrpc\": \"2.0\", \"id\": 2, \"method\": \"tools/call\", \"params\": {\"name\": \"add_observations\", \"arguments\": {\"contents\": [\"synthetic observation\"]}}}\r\n",
+    "wire-14564.jsonl": "{\"direction\": \"request\", \"message\": {\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"initialize\", \"params\": {\"protocolVersion\": \"2025-06-18\", \"capabilities\": {}, \"clientInfo\": {\"name\": \"memwall\", \"version\": \"0.8.0\"}}}, \"raw\": \"{\\\"jsonrpc\\\": \\\"2.0\\\", \\\"id\\\": 1, \\\"method\\\": \\\"initialize\\\", \\\"params\\\": {\\\"protocolVersion\\\": \\\"2025-06-18\\\", \\\"capabilities\\\": {}, \\\"clientInfo\\\": {\\\"name\\\": \\\"memwall\\\", \\\"version\\\": \\\"0.8.0\\\"}}}\\n\"}\r\n{\"direction\": \"response\", \"message\": {\"jsonrpc\": \"2.0\", \"id\": 1, \"result\": {\"protocolVersion\": \"2025-06-18\", \"capabilities\": {\"tools\": {}}, \"serverInfo\": {\"name\": \"counting-fixture\", \"version\": \"1\"}}}, \"raw\": \"{\\\"jsonrpc\\\": \\\"2.0\\\", \\\"id\\\": 1, \\\"result\\\": {\\\"protocolVersion\\\": \\\"2025-06-18\\\", \\\"capabilities\\\": {\\\"tools\\\": {}}, \\\"serverInfo\\\": {\\\"name\\\": \\\"counting-fixture\\\", \\\"version\\\": \\\"1\\\"}}}\\n\"}\r\n{\"direction\": \"request\", \"message\": {\"jsonrpc\": \"2.0\", \"method\": \"notifications/initialized\"}, \"raw\": \"{\\\"jsonrpc\\\": \\\"2.0\\\", \\\"method\\\": \\\"notifications/initialized\\\"}\\n\"}\r\n{\"direction\": \"request\", \"message\": {\"jsonrpc\": \"2.0\", \"id\": 2, \"method\": \"tools/call\", \"params\": {\"name\": \"add_observations\", \"arguments\": {\"contents\": [\"synthetic observation\"]}}}, \"raw\": \"{\\\"jsonrpc\\\": \\\"2.0\\\", \\\"id\\\": 2, \\\"method\\\": \\\"tools/call\\\", \\\"params\\\": {\\\"name\\\": \\\"add_observations\\\", \\\"arguments\\\": {\\\"contents\\\": [\\\"synthetic observation\\\"]}}}\\n\"}\r\n{\"direction\": \"response\", \"message\": {\"jsonrpc\": \"2.0\", \"id\": 2, \"result\": {\"content\": [{\"type\": \"text\", \"text\": \"stored\"}]}}, \"raw\": \"{\\\"jsonrpc\\\": \\\"2.0\\\", \\\"id\\\": 2, \\\"result\\\": {\\\"content\\\": [{\\\"type\\\": \\\"text\\\", \\\"text\\\": \\\"stored\\\"}]}}\\n\"}\r\n",
+    "state/quarantine.jsonl": "{\"version\": 2, \"type\": \"entry\", \"qid\": \"q4f4d71b9be7940a2af11a3981bb0bed8\", \"ts\": \"2026-10-19T18:38:00Z\", \"tool\": \"add_observations\", \"request\": {\"jsonrpc\": \"2.0\", \"id\": 9, \"method\": \"tools/call\", \"params\": {\"name\": \"add_observations\", \"arguments\": {\"contents\": [\"synthetic observation\"]}}}, \"findings\": []}\n{\"version\": 2, \"type\": \"status\", \"qid\": \"q4f4d71b9be7940a2af11a3981bb0bed8\", \"ts\": \"2026-10-19T18:38:01Z\", \"status\": \"releasing\", \"previous\": \"pending\", \"attempt\": \"c4c99143291e4fb5a90812e181c9ac2e\"}\n{\"version\": 2, \"type\": \"status\", \"qid\": \"q4f4d71b9be7940a2af11a3981bb0bed8\", \"ts\": \"2026-10-19T18:38:01Z\", \"status\": \"released\", \"previous\": \"releasing\", \"attempt\": \"c4c99143291e4fb5a90812e181c9ac2e\"}\n"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "observed": {
+    "ids": [
+      "q4831c716e35249ecb7321910975d13e1",
+      "qb33ab53318ed4bc592a30ed07ff12f07"
+    ],
+    "entries": 2
+  },
+  "raw_files": {
+    "state/quarantine.jsonl": "{\"version\": 2, \"type\": \"entry\", \"qid\": \"q4831c716e35249ecb7321910975d13e1\", \"ts\": \"2026-10-19T00:00:00Z\", \"tool\": \"add_observations\", \"request\": {\"jsonrpc\": \"2.0\", \"id\": 9, \"method\": \"tools/call\", \"params\": {\"name\": \"add_observations\", \"arguments\": {\"contents\": [\"synthetic observation\"]}}}, \"findings\": []}\n{\"version\": 2, \"type\": \"entry\", \"qid\": \"qb33ab53318ed4bc592a30ed07ff12f07\", \"ts\": \"2026-10-19T00:00:00Z\", \"tool\": \"add_observations\", \"request\": {\"jsonrpc\": \"2.0\", \"id\": 9, \"method\": \"tools/call\", \"params\": {\"name\": \"add_observations\", \"arguments\": {\"contents\": [\"synthetic observation\"]}}}, \"findings\": []}\n"
+  }
+}

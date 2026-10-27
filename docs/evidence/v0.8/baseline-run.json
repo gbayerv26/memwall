@@ -1,0 +1,6 @@
+{
+  "commit": "ce44f5359cccf77e0f04dade76a4f74b092d5565",
+  "command": "python -m unittest tests.test_release_reliability -v",
+  "exit_code": 1,
+  "note": "Expected five failures; archived baseline source with only two new fixture/test files copied in"
+}

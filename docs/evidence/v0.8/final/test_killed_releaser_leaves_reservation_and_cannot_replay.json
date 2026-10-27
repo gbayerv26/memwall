@@ -1,0 +1,17 @@
+{
+  "observed": {
+    "killed_parent_exit": 1,
+    "reconcile": [
+      0,
+      "reconciled qa896b478387c45b79126c8449914ef66 as released; operator-verified outcome: applied\n",
+      ""
+    ],
+    "status": "released",
+    "effect_count": 1
+  },
+  "raw_files": {
+    "effects.jsonl": "{\"jsonrpc\": \"2.0\", \"id\": 2, \"method\": \"tools/call\", \"params\": {\"name\": \"add_observations\", \"arguments\": {\"contents\": [\"synthetic observation\"]}}}\r\n",
+    "wire-48536.jsonl": "{\"direction\": \"request\", \"message\": {\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"initialize\", \"params\": {\"protocolVersion\": \"2025-06-18\", \"capabilities\": {}, \"clientInfo\": {\"name\": \"memwall\", \"version\": \"0.8.0\"}}}, \"raw\": \"{\\\"jsonrpc\\\": \\\"2.0\\\", \\\"id\\\": 1, \\\"method\\\": \\\"initialize\\\", \\\"params\\\": {\\\"protocolVersion\\\": \\\"2025-06-18\\\", \\\"capabilities\\\": {}, \\\"clientInfo\\\": {\\\"name\\\": \\\"memwall\\\", \\\"version\\\": \\\"0.8.0\\\"}}}\\n\"}\r\n{\"direction\": \"response\", \"message\": {\"jsonrpc\": \"2.0\", \"id\": 1, \"result\": {\"protocolVersion\": \"2025-06-18\", \"capabilities\": {\"tools\": {}}, \"serverInfo\": {\"name\": \"counting-fixture\", \"version\": \"1\"}}}, \"raw\": \"{\\\"jsonrpc\\\": \\\"2.0\\\", \\\"id\\\": 1, \\\"result\\\": {\\\"protocolVersion\\\": \\\"2025-06-18\\\", \\\"capabilities\\\": {\\\"tools\\\": {}}, \\\"serverInfo\\\": {\\\"name\\\": \\\"counting-fixture\\\", \\\"version\\\": \\\"1\\\"}}}\\n\"}\r\n{\"direction\": \"request\", \"message\": {\"jsonrpc\": \"2.0\", \"method\": \"notifications/initialized\"}, \"raw\": \"{\\\"jsonrpc\\\": \\\"2.0\\\", \\\"method\\\": \\\"notifications/initialized\\\"}\\n\"}\r\n{\"direction\": \"request\", \"message\": {\"jsonrpc\": \"2.0\", \"id\": 2, \"method\": \"tools/call\", \"params\": {\"name\": \"add_observations\", \"arguments\": {\"contents\": [\"synthetic observation\"]}}}, \"raw\": \"{\\\"jsonrpc\\\": \\\"2.0\\\", \\\"id\\\": 2, \\\"method\\\": \\\"tools/call\\\", \\\"params\\\": {\\\"name\\\": \\\"add_observations\\\", \\\"arguments\\\": {\\\"contents\\\": [\\\"synthetic observation\\\"]}}}\\n\"}\r\n{\"direction\": \"response\", \"message\": {\"jsonrpc\": \"2.0\", \"id\": 2, \"result\": {\"content\": [{\"type\": \"text\", \"text\": \"stored\"}]}}, \"raw\": \"{\\\"jsonrpc\\\": \\\"2.0\\\", \\\"id\\\": 2, \\\"result\\\": {\\\"content\\\": [{\\\"type\\\": \\\"text\\\", \\\"text\\\": \\\"stored\\\"}]}}\\n\"}\r\n",
+    "state/quarantine.jsonl": "{\"version\": 2, \"type\": \"entry\", \"qid\": \"qa896b478387c45b79126c8449914ef66\", \"ts\": \"2026-10-19T18:37:54Z\", \"tool\": \"add_observations\", \"request\": {\"jsonrpc\": \"2.0\", \"id\": 9, \"method\": \"tools/call\", \"params\": {\"name\": \"add_observations\", \"arguments\": {\"contents\": [\"synthetic observation\"]}}}, \"findings\": []}\n{\"version\": 2, \"type\": \"status\", \"qid\": \"qa896b478387c45b79126c8449914ef66\", \"ts\": \"2026-10-19T18:37:54Z\", \"status\": \"releasing\", \"previous\": \"pending\", \"attempt\": \"f5708e8d97954d7ca292d94cbf10500c\"}\n{\"version\": 2, \"type\": \"status\", \"qid\": \"qa896b478387c45b79126c8449914ef66\", \"ts\": \"2026-10-19T18:37:55Z\", \"status\": \"released\", \"previous\": \"releasing\", \"attempt\": \"f5708e8d97954d7ca292d94cbf10500c\", \"reason\": \"Prior backend stopped; read-back confirms synthetic effect\", \"outcome\": \"applied\", \"backend_quiesced\": false}\n"
+  }
+}

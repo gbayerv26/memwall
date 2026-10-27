@@ -1,0 +1,167 @@
+memwall: no memories found at C:\Users\Gary\AppData\Local\Temp\tmpchh4w3cn\empty.jsonl
+scanned 0 memories from 0 source(s)
+clean: no findings.
+json report: C:\Users\Gary\AppData\Local\Temp\tmpchh4w3cn\j.json
+markdown report: C:\Users\Gary\AppData\Local\Temp\tmpchh4w3cn\m.md
+sarif report: C:\Users\Gary\AppData\Local\Temp\tmpchh4w3cn\s.sarif
+html report: C:\Users\Gary\AppData\Local\Temp\tmpchh4w3cn\h.html
+memwall: no memories found at C:\Users\Gary\AppData\Local\Temp\tmpchh4w3cn\empty.jsonl
+baseline written: C:\Users\Gary\AppData\Local\Temp\tmpchh4w3cn\baseline.json (0 fingerprints)
+test_directory_walk (tests.test_adapters.AdapterTests.test_directory_walk) ... ok
+test_directory_walk_scans_large_sqlite (tests.test_adapters.AdapterTests.test_directory_walk_scans_large_sqlite) ... ok
+test_directory_walk_skips_non_memory_json (tests.test_adapters.AdapterTests.test_directory_walk_skips_non_memory_json) ... ok
+test_directory_walk_sqlite_magic (tests.test_adapters.AdapterTests.test_directory_walk_sqlite_magic) ... ok
+test_directory_walk_store_extension_by_magic (tests.test_adapters.AdapterTests.test_directory_walk_store_extension_by_magic) ... ok
+test_mcp_jsonl (tests.test_adapters.AdapterTests.test_mcp_jsonl) ... ok
+test_mem0_export (tests.test_adapters.AdapterTests.test_mem0_export) ... ok
+test_notes_file_blocks (tests.test_adapters.AdapterTests.test_notes_file_blocks) ... ok
+test_sqlite_identifiers_with_quotes (tests.test_adapters.AdapterTests.test_sqlite_identifiers_with_quotes) ... ok
+test_sqlite_store_by_magic (tests.test_adapters.AdapterTests.test_sqlite_store_by_magic) ... ok
+test_sqlite_uri_failure_not_retried_writable (tests.test_adapters.AdapterTests.test_sqlite_uri_failure_not_retried_writable) ... ok
+test_baseline_workflow (tests.test_cli.CliTests.test_baseline_workflow) ... ok
+test_benign_store_passes (tests.test_cli.CliTests.test_benign_store_passes) ... ok
+test_json_export (tests.test_cli.CliTests.test_json_export) ... ok
+test_poisoned_store_fails_ci_gate (tests.test_cli.CliTests.test_poisoned_store_fails_ci_gate) ... ok
+test_quiet_output (tests.test_cli.CliTests.test_quiet_output) ... ok
+test_rules_listing (tests.test_cli.CliTests.test_rules_listing) ... ok
+test_allowed_arguments_and_other_metadata_remain_equal (tests.test_contract_gateway.EnforcementTests.test_allowed_arguments_and_other_metadata_remain_equal) ... ok
+test_broken_backend_returns_an_error_without_claiming_no_side_effects (tests.test_contract_gateway.EnforcementTests.test_broken_backend_returns_an_error_without_claiming_no_side_effects) ... ok
+test_custom_writer_and_reader_roles (tests.test_contract_gateway.EnforcementTests.test_custom_writer_and_reader_roles) ... ok
+test_distinct_entities_do_not_create_a_combination (tests.test_contract_gateway.EnforcementTests.test_distinct_entities_do_not_create_a_combination) ... ok
+test_invalid_calls_never_forward_and_next_call_still_works (tests.test_contract_gateway.EnforcementTests.test_invalid_calls_never_forward_and_next_call_still_works) ... ok
+test_invalid_utf8_duplicate_keys_depth_and_size_are_refused (tests.test_contract_gateway.EnforcementTests.test_invalid_utf8_duplicate_keys_depth_and_size_are_refused) ... ok
+test_judge_is_advisory_for_every_verdict_and_unavailability (tests.test_contract_gateway.EnforcementTests.test_judge_is_advisory_for_every_verdict_and_unavailability) ... ok
+test_operator_strictness_and_stricter_claim_are_preserved (tests.test_contract_gateway.EnforcementTests.test_operator_strictness_and_stricter_claim_are_preserved) ... ok
+test_origin_cannot_relax_operator_threshold (tests.test_contract_gateway.EnforcementTests.test_origin_cannot_relax_operator_threshold) ... ok
+test_partial_backend_writes_preserve_the_complete_frame (tests.test_contract_gateway.EnforcementTests.test_partial_backend_writes_preserve_the_complete_frame) ... ok
+test_protocol_error_codes_distinguish_parse_envelope_and_params (tests.test_contract_gateway.EnforcementTests.test_protocol_error_codes_distinguish_parse_envelope_and_params) ... ok
+test_protocol_traffic_remains_transparent (tests.test_contract_gateway.EnforcementTests.test_protocol_traffic_remains_transparent) ... ok
+test_read_and_cleanup_calls_bypass_content_detection (tests.test_contract_gateway.EnforcementTests.test_read_and_cleanup_calls_bypass_content_detection) ... ok
+test_repeated_long_identity_does_not_interrupt_instruction_fragments (tests.test_contract_gateway.EnforcementTests.test_repeated_long_identity_does_not_interrupt_instruction_fragments) ... ok
+test_replacement_matcher_exceptions_refuse_and_next_request_recovers (tests.test_contract_gateway.EnforcementTests.test_replacement_matcher_exceptions_refuse_and_next_request_recovers) ... ok
+test_same_entity_fragments_block_as_one_call_with_paths (tests.test_contract_gateway.EnforcementTests.test_same_entity_fragments_block_as_one_call_with_paths) ... ok
+test_scan_and_state_errors_fail_closed_without_fake_quarantine (tests.test_contract_gateway.EnforcementTests.test_scan_and_state_errors_fail_closed_without_fake_quarantine) ... ok
+test_wire_frames_do_not_gain_extra_newlines (tests.test_contract_gateway.EnforcementTests.test_wire_frames_do_not_gain_extra_newlines) ... ok
+test_invalid_profile_does_not_start_a_backend (tests.test_contract_gateway.ProfileCliTests.test_invalid_profile_does_not_start_a_backend) ... ok
+test_near_limit_delimiter_inputs_preserve_decisions_and_following_requests (tests.test_contract_gateway.ProfileCliTests.test_near_limit_delimiter_inputs_preserve_decisions_and_following_requests) ... ok
+test_subprocess_protocol_limits_recover_without_forwarding_bad_frames (tests.test_contract_gateway.ProfileCliTests.test_subprocess_protocol_limits_recover_without_forwarding_bad_frames) ... ok
+test_all_entity_and_relation_text_is_inspected (tests.test_contracts.ContractTests.test_all_entity_and_relation_text_is_inspected) ... ok
+test_ambiguous_or_unsupported_write_shapes_are_rejected (tests.test_contracts.ContractTests.test_ambiguous_or_unsupported_write_shapes_are_rejected) ... ok
+test_custom_profile_is_versioned_and_uses_only_supported_extractors (tests.test_contracts.ContractTests.test_custom_profile_is_versioned_and_uses_only_supported_extractors) ... ok
+test_same_entity_groups_repeated_objects_and_keeps_field_paths (tests.test_contracts.ContractTests.test_same_entity_groups_repeated_objects_and_keeps_field_paths) ... ok
+test_strict_json_and_depth_limits (tests.test_contracts.ContractTests.test_strict_json_and_depth_limits) ... ok
+test_trusted_read_and_maintenance_roles_do_not_inspect_quoted_text (tests.test_contracts.ContractTests.test_trusted_read_and_maintenance_roles_do_not_inspect_quoted_text) ... ok
+test_gateway_blocks_poisoned_and_applies_origin_policy (tests.test_gateway.GatewayIntegrationTests.test_gateway_blocks_poisoned_and_applies_origin_policy) ... ok
+test_judge_clears_flagged_write (tests.test_gateway.JudgeInLoopTests.test_judge_clears_flagged_write) ... ok
+test_judge_confirms_quarantine (tests.test_gateway.JudgeInLoopTests.test_judge_confirms_quarantine) ... ok
+test_judge_unavailable_keeps_block (tests.test_gateway.JudgeInLoopTests.test_judge_unavailable_keeps_block) ... memwall gateway: judge unavailable, keeping quarantine: memwall: set ANTHROPIC_API_KEY to use --judge
+ok
+test_authority_claim (tests.test_heuristics.HeuristicTests.test_authority_claim) ... ok
+test_beacon_match_preserves_nested_openers_greediness_and_case (tests.test_heuristics.HeuristicTests.test_beacon_match_preserves_nested_openers_greediness_and_case) ... ok
+test_benign_facts_are_clean (tests.test_heuristics.HeuristicTests.test_benign_facts_are_clean) ... ok
+test_bounded_exhaustive_delimiter_grammars_preserve_exact_matches (tests.test_heuristics.HeuristicTests.test_bounded_exhaustive_delimiter_grammars_preserve_exact_matches) ... ok
+test_combo_escalates_to_critical (tests.test_heuristics.HeuristicTests.test_combo_escalates_to_critical) ... ok
+test_comment_delimiters_preserve_matches_and_severity (tests.test_heuristics.HeuristicTests.test_comment_delimiters_preserve_matches_and_severity) ... ok
+test_delayed_trigger_plus_destination_is_critical (tests.test_heuristics.HeuristicTests.test_delayed_trigger_plus_destination_is_critical) ... ok
+test_delimiter_engine_uses_safe_matchers_and_preserves_snippet_limit (tests.test_heuristics.HeuristicTests.test_delimiter_engine_uses_safe_matchers_and_preserves_snippet_limit) ... ok
+test_delimiter_matchers_agree_with_original_regex_on_small_inputs (tests.test_heuristics.HeuristicTests.test_delimiter_matchers_agree_with_original_regex_on_small_inputs) ... ok
+test_hidden_characters (tests.test_heuristics.HeuristicTests.test_hidden_characters) ... ok
+test_instruction_files_allow_imperatives (tests.test_heuristics.HeuristicTests.test_instruction_files_allow_imperatives) ... ok
+test_override_instruction (tests.test_heuristics.HeuristicTests.test_override_instruction) ... ok
+test_rendering_beacon (tests.test_heuristics.HeuristicTests.test_rendering_beacon) ... ok
+test_role_marker_smuggling (tests.test_heuristics.HeuristicTests.test_role_marker_smuggling) ... ok
+test_secrecy_pressure (tests.test_heuristics.HeuristicTests.test_secrecy_pressure) ... ok
+test_self_referential_order (tests.test_heuristics.HeuristicTests.test_self_referential_order) ... ok
+test_tool_directive_plus_url_is_critical (tests.test_heuristics.HeuristicTests.test_tool_directive_plus_url_is_critical) ... ok
+test_trigger_phrase_negatives (tests.test_heuristics.HeuristicTests.test_trigger_phrase_negatives) ... ok
+test_url_alone_stays_low (tests.test_heuristics.HeuristicTests.test_url_alone_stays_low) ... ok
+test_boolean_response_id_cannot_match_integer_request (tests.test_mcp_client.MiniClientTests.test_boolean_response_id_cannot_match_integer_request) ... ok
+test_invalid_handshake_never_sends_tool_call (tests.test_mcp_client.MiniClientTests.test_invalid_handshake_never_sends_tool_call) ... ok
+test_invalid_json_and_response_envelopes_are_not_success (tests.test_mcp_client.MiniClientTests.test_invalid_json_and_response_envelopes_are_not_success) ... ok
+test_partial_pipe_writes_preserve_entire_request (tests.test_mcp_client.MiniClientTests.test_partial_pipe_writes_preserve_entire_request) ... ok
+test_supported_tool_success_and_malformed_content (tests.test_mcp_client.MiniClientTests.test_supported_tool_success_and_malformed_content) ... ok
+test_corrupt_and_non_object_snapshots_reset_to_baseline (tests.test_monitor.MonitorSnapshotTests.test_corrupt_and_non_object_snapshots_reset_to_baseline) ... ok
+test_same_content_distinct_record_id_is_new (tests.test_monitor.MonitorSnapshotTests.test_same_content_distinct_record_id_is_new) ... ok
+test_targets_sharing_state_dir_are_independent (tests.test_monitor.MonitorSnapshotTests.test_targets_sharing_state_dir_are_independent) ... ok
+test_unchanged_second_run_has_no_new_findings (tests.test_monitor.MonitorSnapshotTests.test_unchanged_second_run_has_no_new_findings) ... ok
+test_cli_forget_check_exit_codes (tests.test_phase3.ForgetTests.test_cli_forget_check_exit_codes) ... ok
+test_erased_returns_nothing (tests.test_phase3.ForgetTests.test_erased_returns_nothing) ... ok
+test_finds_and_reports_subject (tests.test_phase3.ForgetTests.test_finds_and_reports_subject) ... ok
+test_subject_normalization_and_whitespace_error (tests.test_phase3.ForgetTests.test_subject_normalization_and_whitespace_error) ... ok
+test_baseline_then_new_finding (tests.test_phase3.MonitorTests.test_baseline_then_new_finding) ... ok
+test_empty_scan_exports_and_baseline (tests.test_phase3.MonitorTests.test_empty_scan_exports_and_baseline) ... ok
+test_invalid_watch_options (tests.test_phase3.MonitorTests.test_invalid_watch_options) ... ok
+test_watch_once_cli_fail_on_new (tests.test_phase3.MonitorTests.test_watch_once_cli_fail_on_new) ... ok
+test_html_is_selfcontained (tests.test_phase3.SarifTests.test_html_is_selfcontained) ... ok
+test_logical_locations_is_sibling (tests.test_phase3.SarifTests.test_logical_locations_is_sibling) ... ok
+test_sarif_shape (tests.test_phase3.SarifTests.test_sarif_shape) ... ok
+test_uri_classification_and_encoding (tests.test_phase3.SarifTests.test_uri_classification_and_encoding) ... ok
+test_builtin_thresholds (tests.test_policy.PolicyTests.test_builtin_thresholds) ... ok
+test_from_file_merges_over_builtins (tests.test_policy.PolicyTests.test_from_file_merges_over_builtins) ... ok
+test_presets (tests.test_policy.PolicyTests.test_presets) ... ok
+test_collision_never_replaces_entry (tests.test_quarantine_recovery.QuarantineRecoveryTests.test_collision_never_replaces_entry) ... ok
+test_completion_error_after_full_record_still_prevents_replay (tests.test_quarantine_recovery.QuarantineRecoveryTests.test_completion_error_after_full_record_still_prevents_replay) ... ok
+test_concurrent_quarantine_writers_preserve_all_entries (tests.test_quarantine_recovery.QuarantineRecoveryTests.test_concurrent_quarantine_writers_preserve_all_entries) ... ok
+test_corruption_variants_refuse_reads_mutations_and_release (tests.test_quarantine_recovery.QuarantineRecoveryTests.test_corruption_variants_refuse_reads_mutations_and_release) ... ok
+test_excessive_depth_cannot_poison_new_journal (tests.test_quarantine_recovery.QuarantineRecoveryTests.test_excessive_depth_cannot_poison_new_journal) ... ok
+test_fsync_failure_before_dispatch_never_launches_backend (tests.test_quarantine_recovery.QuarantineRecoveryTests.test_fsync_failure_before_dispatch_never_launches_backend) ... ok
+test_killed_releaser_leaves_reservation_and_cannot_replay (tests.test_quarantine_recovery.QuarantineRecoveryTests.test_killed_releaser_leaves_reservation_and_cannot_replay) ... ok
+test_launch_and_initialization_failures_are_retryable_without_dispatch (tests.test_quarantine_recovery.QuarantineRecoveryTests.test_launch_and_initialization_failures_are_retryable_without_dispatch) ... ok
+test_legacy_finalized_entries_remain_finalized (tests.test_quarantine_recovery.QuarantineRecoveryTests.test_legacy_finalized_entries_remain_finalized) ... ok
+test_legacy_pending_entry_is_readable_and_releasable (tests.test_quarantine_recovery.QuarantineRecoveryTests.test_legacy_pending_entry_is_readable_and_releasable) ... ok
+test_live_attempt_blocks_drop_and_reconciliation (tests.test_quarantine_recovery.QuarantineRecoveryTests.test_live_attempt_blocks_drop_and_reconciliation) ... ok
+test_not_applied_requires_quiescence_and_reason_then_allows_one_attempt (tests.test_quarantine_recovery.QuarantineRecoveryTests.test_not_applied_requires_quiescence_and_reason_then_allows_one_attempt) ... ok
+test_reconcile_applied_prevents_replay (tests.test_quarantine_recovery.QuarantineRecoveryTests.test_reconcile_applied_prevents_replay) ... ok
+test_reservation_write_failure_never_dispatches (tests.test_quarantine_recovery.QuarantineRecoveryTests.test_reservation_write_failure_never_dispatches) ... ok
+test_valid_gateway_depth_fits_journal_envelope (tests.test_quarantine_recovery.QuarantineRecoveryTests.test_valid_gateway_depth_fits_journal_envelope) ... ok
+test_allowed_writes_and_reads_preserve_real_memory (tests.test_reference_backend.ReferenceBackendTests.test_allowed_writes_and_reads_preserve_real_memory) ... ok
+test_backend_release_error_does_not_claim_success (tests.test_reference_backend.ReferenceBackendTests.test_backend_release_error_does_not_claim_success) ... Knowledge Graph MCP Server running on stdio
+ok
+test_origin_split_and_mixed_batch_blocks_leave_store_unchanged (tests.test_reference_backend.ReferenceBackendTests.test_origin_split_and_mixed_batch_blocks_leave_store_unchanged) ... ok
+test_poison_deletion_is_allowed_without_reinserting_it (tests.test_reference_backend.ReferenceBackendTests.test_poison_deletion_is_allowed_without_reinserting_it) ... ok
+test_successful_release_readback_and_replay_refusal (tests.test_reference_backend.ReferenceBackendTests.test_successful_release_readback_and_replay_refusal) ... Knowledge Graph MCP Server running on stdio
+ok
+test_trial_demo_candidate_is_stored_by_real_backend (tests.test_reference_backend.ReferenceBackendTests.test_trial_demo_candidate_is_stored_by_real_backend) ... ok
+test_completion_record_failure_cannot_replay_effect (tests.test_release_reliability.ReleaseReliabilityTests.test_completion_record_failure_cannot_replay_effect) ... ok
+test_concurrent_release_dispatches_once (tests.test_release_reliability.ReleaseReliabilityTests.test_concurrent_release_dispatches_once) ... ok
+test_identical_requests_have_separate_entries (tests.test_release_reliability.ReleaseReliabilityTests.test_identical_requests_have_separate_entries) ... ok
+test_lost_response_cannot_replay_effect (tests.test_release_reliability.ReleaseReliabilityTests.test_lost_response_cannot_replay_effect) ... ok
+test_truncated_status_prevents_release (tests.test_release_reliability.ReleaseReliabilityTests.test_truncated_status_prevents_release) ... ok
+test_cli_log_and_list (tests.test_state.StateTests.test_cli_log_and_list) ... ok
+test_cli_release_replays_to_backend (tests.test_state.StateTests.test_cli_release_replays_to_backend) ... ok
+test_release_backend_error_never_marks_released (tests.test_state.StateTests.test_release_backend_error_never_marks_released) ... ok
+test_release_protocol_failure_records_uncertainty_and_closes_backend (tests.test_state.StateTests.test_release_protocol_failure_records_uncertainty_and_closes_backend) ... ok
+test_release_rejects_already_released_or_dropped_entries (tests.test_state.StateTests.test_release_rejects_already_released_or_dropped_entries) ... ok
+test_status_folding (tests.test_state.StateTests.test_status_folding) ... ok
+test_artifact_tampering_and_bundle_metadata_tampering_are_detected (tests.test_trials.TrialTests.test_artifact_tampering_and_bundle_metadata_tampering_are_detected) ... ok
+test_baseline_contamination_is_rejected (tests.test_trials.TrialTests.test_baseline_contamination_is_rejected) ... ok
+test_baseline_variability_is_visible_and_inconclusive (tests.test_trials.TrialTests.test_baseline_variability_is_visible_and_inconclusive) ... ok
+test_benefit_does_not_hide_safety_regression (tests.test_trials.TrialTests.test_benefit_does_not_hide_safety_regression) ... ok
+test_bundle_is_reproducible_and_preserves_exact_request_bytes (tests.test_trials.TrialTests.test_bundle_is_reproducible_and_preserves_exact_request_bytes) ... ok
+test_candidate_envelope_requires_valid_request_id_and_no_response_fields (tests.test_trials.TrialTests.test_candidate_envelope_requires_valid_request_id_and_no_response_fields) ... ok
+test_checks_require_actual_booleans (tests.test_trials.TrialTests.test_checks_require_actual_booleans) ... ok
+test_cli_reports_success_and_validation_errors (tests.test_trials.TrialTests.test_cli_reports_success_and_validation_errors) ... ok
+test_complete_demo_measures_distinct_effects_without_model_calls (tests.test_trials.TrialTests.test_complete_demo_measures_distinct_effects_without_model_calls) ... ok
+test_demo_write_matches_reference_memory_contract (tests.test_trials.TrialTests.test_demo_write_matches_reference_memory_contract) ... ok
+test_different_baseline_control_inputs_are_rejected (tests.test_trials.TrialTests.test_different_baseline_control_inputs_are_rejected) ... ok
+test_different_candidate_task_is_rejected (tests.test_trials.TrialTests.test_different_candidate_task_is_rejected) ... ok
+test_different_initial_environment_is_rejected (tests.test_trials.TrialTests.test_different_initial_environment_is_rejected) ... ok
+test_duplicate_json_keys_nonfinite_values_and_oversized_inputs_fail (tests.test_trials.TrialTests.test_duplicate_json_keys_nonfinite_values_and_oversized_inputs_fail) ... ok
+test_each_input_and_model_configuration_change_invalidates_evidence (tests.test_trials.TrialTests.test_each_input_and_model_configuration_change_invalidates_evidence) ... ok
+test_errors_cannot_be_reported_as_clean_results (tests.test_trials.TrialTests.test_errors_cannot_be_reported_as_clean_results) ... ok
+test_exclusive_outputs_do_not_overwrite_sources_or_receipts (tests.test_trials.TrialTests.test_exclusive_outputs_do_not_overwrite_sources_or_receipts) ... ok
+test_invalid_candidate_is_not_wrapped_as_valid_trial (tests.test_trials.TrialTests.test_invalid_candidate_is_not_wrapped_as_valid_trial) ... ok
+test_invalid_messages_and_unsubstantiated_exposure_are_rejected (tests.test_trials.TrialTests.test_invalid_messages_and_unsubstantiated_exposure_are_rejected) ... ok
+test_missing_and_duplicate_runs_are_rejected (tests.test_trials.TrialTests.test_missing_and_duplicate_runs_are_rejected) ... ok
+test_missing_and_tampered_trace_files_are_rejected (tests.test_trials.TrialTests.test_missing_and_tampered_trace_files_are_rejected) ... ok
+test_missing_output_cannot_count_as_safe_refusal (tests.test_trials.TrialTests.test_missing_output_cannot_count_as_safe_refusal) ... ok
+test_simulation_cannot_be_relabelled_as_agent_results (tests.test_trials.TrialTests.test_simulation_cannot_be_relabelled_as_agent_results) ... ok
+test_trace_configuration_snapshot_and_run_bindings_are_checked (tests.test_trials.TrialTests.test_trace_configuration_snapshot_and_run_bindings_are_checked) ... ok
+test_trace_path_cannot_escape_result_directory (tests.test_trials.TrialTests.test_trace_path_cannot_escape_result_directory) ... ok
+test_unexposed_memory_is_inconclusive (tests.test_trials.TrialTests.test_unexposed_memory_is_inconclusive) ... ok
+test_unsafe_action_is_harm_even_with_correct_task_output (tests.test_trials.TrialTests.test_unsafe_action_is_harm_even_with_correct_task_output) ... ok
+
+----------------------------------------------------------------------
+Ran 150 tests in 17.001s
+
+OK

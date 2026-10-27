@@ -1,0 +1,123 @@
+{
+  "release_exit": 0,
+  "traffic": [
+    {
+      "direction": "request",
+      "message": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {
+          "protocolVersion": "2025-06-18",
+          "capabilities": {},
+          "clientInfo": {
+            "name": "memwall-integration",
+            "version": "1"
+          }
+        }
+      }
+    },
+    {
+      "direction": "response",
+      "message": {
+        "result": {
+          "protocolVersion": "2025-06-18",
+          "capabilities": {
+            "tools": {
+              "listChanged": true
+            },
+            "resources": {
+              "listChanged": true,
+              "subscribe": true
+            }
+          },
+          "serverInfo": {
+            "name": "memory-server",
+            "version": "1.0.0"
+          }
+        },
+        "jsonrpc": "2.0",
+        "id": 1
+      }
+    },
+    {
+      "direction": "request",
+      "message": {
+        "jsonrpc": "2.0",
+        "method": "notifications/initialized"
+      }
+    },
+    {
+      "direction": "request",
+      "message": {
+        "jsonrpc": "2.0",
+        "id": 2,
+        "method": "tools/call",
+        "params": {
+          "name": "read_graph",
+          "arguments": {}
+        }
+      }
+    },
+    {
+      "direction": "response",
+      "message": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"entities\": [],\n  \"relations\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "entities": [],
+            "relations": []
+          }
+        },
+        "jsonrpc": "2.0",
+        "id": 2
+      }
+    },
+    {
+      "direction": "request",
+      "message": {
+        "jsonrpc": "2.0",
+        "id": 3,
+        "method": "tools/call",
+        "params": {
+          "name": "read_graph",
+          "arguments": {}
+        }
+      }
+    },
+    {
+      "direction": "response",
+      "message": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"entities\": [\n    {\n      \"name\": \"approved\",\n      \"entityType\": \"synthetic\",\n      \"observations\": [\n        \"Operator-reviewed synthetic observation\"\n      ]\n    }\n  ],\n  \"relations\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "entities": [
+              {
+                "name": "approved",
+                "entityType": "synthetic",
+                "observations": [
+                  "Operator-reviewed synthetic observation"
+                ]
+              }
+            ],
+            "relations": []
+          }
+        },
+        "jsonrpc": "2.0",
+        "id": 3
+      }
+    }
+  ],
+  "journal": "{\"version\": 2, \"type\": \"entry\", \"qid\": \"qa54630cc18644216b982031b8372461e\", \"ts\": \"2026-10-19T18:37:59Z\", \"tool\": \"create_entities\", \"request\": {\"jsonrpc\": \"2.0\", \"id\": 9, \"method\": \"tools/call\", \"params\": {\"name\": \"create_entities\", \"arguments\": {\"entities\": [{\"name\": \"approved\", \"entityType\": \"synthetic\", \"observations\": [\"Operator-reviewed synthetic observation\"]}]}}}, \"findings\": []}\n{\"version\": 2, \"type\": \"status\", \"qid\": \"qa54630cc18644216b982031b8372461e\", \"ts\": \"2026-10-19T18:37:59Z\", \"status\": \"releasing\", \"previous\": \"pending\", \"attempt\": \"52e742c73773425a8070381991c4d353\"}\n{\"version\": 2, \"type\": \"status\", \"qid\": \"qa54630cc18644216b982031b8372461e\", \"ts\": \"2026-10-19T18:38:00Z\", \"status\": \"released\", \"previous\": \"releasing\", \"attempt\": \"52e742c73773425a8070381991c4d353\"}\n",
+  "backend_bytes": "{\"type\":\"entity\",\"name\":\"approved\",\"entityType\":\"synthetic\",\"observations\":[\"Operator-reviewed synthetic observation\"]}\n"
+}

@@ -1,0 +1,18 @@
+{
+  "checks": [
+    {
+      "step": "isolated wheel build",
+      "outcome": "timeout after 45 seconds"
+    }
+  ],
+  "initial_attempts": [
+    {
+      "exit_code": 1,
+      "reason": "Host lacks setuptools.build_meta"
+    },
+    {
+      "outcome": "timeout after 60 seconds fetching declared build requirements from configured package source"
+    }
+  ],
+  "outcome": "unavailable: build requirements could not be fetched; no wheel verification claimed"
+}
