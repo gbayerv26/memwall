@@ -3,7 +3,10 @@ from __future__ import annotations
 
 import enum
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .adapters.coverage import Coverage
 
 
 class Severity(enum.IntEnum):
@@ -55,6 +58,7 @@ class ScanResult:
     reports: list
     scanned: int
     stores: list
+    coverage: Optional[Coverage] = None
 
     @property
     def flagged(self) -> list:

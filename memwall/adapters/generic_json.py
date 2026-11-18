@@ -8,7 +8,7 @@ from ..models import MemoryRecord
 _CONTENT_FIELDS = ("content", "memory", "text", "observation", "value", "fact", "note")
 
 
-def load(path: str) -> list:
+def load(path: str, *, issue=None) -> list:
     with open(path, encoding="utf-8-sig") as fh:
         data = json.load(fh)
     if isinstance(data, dict):
@@ -23,6 +23,13 @@ def load(path: str) -> list:
 
     records = []
     for idx, item in enumerate(data):
+        if issue is not None:
+            if isinstance(item, dict):
+                fields = [item[key] for key in _CONTENT_FIELDS if key in item]
+                if not fields or any(value is not None and not isinstance(value, str) for value in fields):
+                    issue("unsupported_item", location=idx + 1)
+            elif not isinstance(item, str):
+                issue("unsupported_item", location=idx + 1)
         if isinstance(item, str):
             content = item
         elif isinstance(item, dict):

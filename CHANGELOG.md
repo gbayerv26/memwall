@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.1 - 2026-11-18
+
+- Report complete, partial, failed and empty discovery coverage in offline
+  commands. Preserve findings from readable inputs and exit 2 when a selected
+  scan is incomplete.
+- Preserve monitor snapshots and refuse baseline updates on incomplete scans.
+- Scope literal identifier checks to the selected records. Forget JSON adds
+  a result and coverage, and omits the legacy `erased` key when the result
+  is unknown.
+
 ## 0.8.0 - 2026-10-19
 
 - Preserve identical quarantine operations under distinct random IDs and refuse

@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 import os
+import sqlite3
 import sys
+from functools import partial
 
 from . import files, generic_json, mcp_memory, mem0_export, sqlite_store
+from .coverage import Coverage
 
 ADAPTERS = {
     "files": files.load,
@@ -22,8 +25,8 @@ DB_EXTS = {".db", ".sqlite", ".sqlite3"}
 EXTS = {".md", ".mdc", ".txt", ".json", ".jsonl"} | DB_EXTS
 
 
-def detect_format(path: str) -> str:
-    if sqlite_store.is_sqlite(path):
+def detect_format(path: str, *, strict=False) -> str:
+    if sqlite_store.is_sqlite(path, strict=strict):
         return "sqlite"
     ext = os.path.splitext(path)[1].lower()
     if ext == ".jsonl":
@@ -33,6 +36,8 @@ def detect_format(path: str) -> str:
             with open(path, encoding="utf-8-sig") as fh:
                 head = fh.read(4096).lstrip()
         except OSError:
+            if strict:
+                raise
             return "json"
         # The MCP reference memory server writes JSONL into a .json file.
         if head.startswith('{"type"') or '"observations"' in head:
@@ -46,31 +51,84 @@ def detect_format(path: str) -> str:
 MAX_WALK_FILE_BYTES = 5 * 1024 * 1024
 
 
-def _walkable(file_path: str, low: str, ext: str) -> bool:
-    confirmed_sqlite = sqlite_store.is_sqlite(file_path)
+def _walkable(file_path: str, low: str, ext: str, coverage=None) -> bool:
     try:
-        if os.path.getsize(file_path) > MAX_WALK_FILE_BYTES:
-            if not confirmed_sqlite:
-                print(f"memwall: skipped {file_path}: larger than "
-                      f"{MAX_WALK_FILE_BYTES // (1024 * 1024)} MB", file=sys.stderr)
+        confirmed_sqlite = sqlite_store.is_sqlite(file_path, strict=coverage is not None)
+        if ext in DB_EXTS and not confirmed_sqlite:
+            return False
+        if ext == ".json" and low not in KNOWN_NAMES:
+            if ("memor" not in low and "mem0" not in low
+                    and detect_format(file_path, strict=coverage is not None) == "json"):
                 return False
-    except OSError:
+        if confirmed_sqlite or os.path.getsize(file_path) <= MAX_WALK_FILE_BYTES:
+            return True
+    except (OSError, UnicodeError) as exc:
+        if coverage is not None:
+            coverage.selected_sources += 1
+            code = "decode_error" if isinstance(exc, UnicodeError) else "source_unreadable"
+            coverage.issue(code, file_path)
         return False
-    if ext in DB_EXTS:
-        return confirmed_sqlite
-    if ext == ".json" and low not in KNOWN_NAMES:
-        # In directory walks, only ingest .json that looks like agent memory -
-        # otherwise every package.json and tsconfig.json becomes noise.
-        return "memor" in low or "mem0" in low or detect_format(file_path) != "json"
-    return True
+    if coverage is None:
+        print(f"memwall: skipped {file_path}: larger than "
+              f"{MAX_WALK_FILE_BYTES // (1024 * 1024)} MB", file=sys.stderr)
+    else:
+        coverage.selected_sources += 1
+        coverage.issue("file_size_limit", file_path)
+    return False
 
 
 def load(path: str, fmt: str = "auto") -> list:
+    return _load(path, fmt)
+
+
+def load_with_coverage(path: str, fmt: str = "auto"):
+    coverage = Coverage(os.fspath(path), fmt)
+    records = _load(path, fmt, coverage)
+    coverage.records = len(records)
+    return records, coverage
+
+
+def _load_file(path, fmt, coverage=None):
+    if coverage is None:
+        return ADAPTERS[detect_format(path) if fmt == "auto" else fmt](path)
+
+    coverage.selected_sources += 1
+    issues_before = sum(coverage.issue_counts.values())
+    try:
+        selected_format = fmt
+        if fmt == "auto":
+            selected_format = ("sqlite" if os.path.splitext(path)[1].lower() in DB_EXTS
+                               else detect_format(path, strict=True))
+        records = ADAPTERS[selected_format](path, issue=partial(coverage.issue, path=path))
+    except FileNotFoundError:
+        coverage.issue("source_missing", path)
+        return []
+    except UnicodeError:
+        coverage.issue("decode_error", path)
+        return []
+    except (ValueError, RecursionError):
+        coverage.issue("invalid_document", path)
+        return []
+    except (OSError, sqlite3.Error):
+        coverage.issue("source_unreadable", path)
+        return []
+    coverage._opened_sources += 1
+    if sum(coverage.issue_counts.values()) == issues_before:
+        coverage.complete_sources += 1
+    return records
+
+
+def _load(path, fmt, coverage=None):
     if fmt != "auto":
-        return ADAPTERS[fmt](path)
+        return _load_file(path, fmt, coverage)
     if os.path.isdir(path):
         records = []
-        for root, dirs, names in os.walk(path):
+
+        def walk_error(exc):
+            if coverage is not None:
+                coverage.issue("directory_unreadable", exc.filename or path)
+
+        for root, dirs, names in os.walk(path, onerror=walk_error):
             dirs[:] = [d for d in dirs
                        if d not in SKIP_DIRS and (not d.startswith(".") or d in KEEP_HIDDEN)]
             for name in sorted(names):
@@ -80,11 +138,12 @@ def load(path: str, fmt: str = "auto") -> list:
                 # Probe the SQLite magic before rejecting unknown extensions.
                 if low not in KNOWN_NAMES and ext not in EXTS and not sqlite_store.is_sqlite(file_path):
                     continue
-                if not _walkable(file_path, low, ext):
-                    continue
                 try:
-                    records.extend(load(file_path, "auto"))
+                    if _walkable(file_path, low, ext, coverage):
+                        records.extend(_load_file(file_path, "auto", coverage))
                 except Exception as exc:  # keep walking on malformed files
+                    if coverage is not None:
+                        raise
                     print(f"memwall: skipped {file_path}: {exc}", file=sys.stderr)
         return records
-    return ADAPTERS[detect_format(path)](path)
+    return _load_file(path, fmt, coverage)
