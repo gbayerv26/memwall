@@ -48,3 +48,13 @@ An inventory walks the selected inputs during capture. Quiesce writers or use
 a consistent store export when a point-in-time view matters.
 
 Run the [LangGraph Store escalation example](../examples/langgraph_store/README.md) to reproduce a complete and a deliberately partial comparison.
+
+## Release verification
+
+On Windows with Python 3.12.10 the suite passed all 166 tests, including six
+interoperability cases with the pinned MCP reference server 1.0.0. The wheel
+and source distribution each installed into a separate fresh environment
+outside the checkout. Both installed entry points captured and compared a
+one-edit store without LangGraph installed. The optional example ran separately
+with langgraph-checkpoint 4.3.2. Snapshot and summary publication require a
+destination filesystem that supports hard links.
