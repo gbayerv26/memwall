@@ -34,6 +34,18 @@ def main(argv=None) -> int:
     parser.add_argument("--version", action="version", version=f"memwall {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
 
+    inventory = sub.add_parser("inventory", help="capture and compare local memory records")
+    operations = inventory.add_subparsers(dest="operation", required=True)
+    capture = operations.add_parser("snapshot", help="write a private snapshot to a new file")
+    capture.add_argument("path")
+    capture.add_argument("--scope", required=True)
+    capture.add_argument("--format", choices=["auto", *adapters.ADAPTERS, "langgraph"], default="auto")
+    capture.add_argument("--out", required=True)
+    diff = operations.add_parser("diff", help="compare two private snapshots")
+    diff.add_argument("before")
+    diff.add_argument("after")
+    diff.add_argument("--summary", help="write counts and reason codes to a new JSON file")
+
     scan_p = sub.add_parser("scan", help="scan a memory store, export, file, or directory")
     scan_p.add_argument("path", help="memory file, export, or directory to walk")
     scan_p.add_argument("--format", choices=["auto", "files", "mcp", "mem0", "json", "sqlite"], default="auto")
@@ -135,6 +147,8 @@ def main(argv=None) -> int:
             except Exception:
                 pass
 
+    if args.command == "inventory":
+        return _cmd_inventory(args)
     if args.command == "rules":
         width = max(len(r.name) for r in heuristics.RULES)
         for rule in heuristics.RULES:
@@ -157,6 +171,26 @@ def main(argv=None) -> int:
     if args.command == "trial":
         return _cmd_trial(args)
     return 0
+
+
+def _cmd_inventory(args):
+    from .inventory_capture import publish, read_manifest, snapshot
+    from .inventory_diff import compare
+
+    try:
+        if args.operation == "snapshot":
+            manifest = snapshot(args.path, args.format, args.scope, args.out)
+            coverage = manifest["coverage"]
+            print(json.dumps({"snapshot": args.out, "coverage": coverage}, sort_keys=True))
+            return 0 if coverage["status"] == "complete" else 2
+        summary, details = compare(read_manifest(args.before), read_manifest(args.after))
+        if args.summary:
+            publish(args.summary, summary)
+        print(json.dumps({"summary": summary, "details": details}, indent=2))
+        return 2 if summary["reason_codes"] else 0
+    except (ValueError, OSError, RecursionError) as exc:
+        print(f"memwall: inventory: {exc}", file=sys.stderr)
+        return 2
 
 
 def _cmd_trial(args) -> int:
