@@ -20,15 +20,17 @@ def _quote_identifier(identifier: str) -> str:
     return '"' + identifier.replace('"', '""') + '"'
 
 
-def is_sqlite(path: str) -> bool:
+def is_sqlite(path: str, *, strict=False) -> bool:
     try:
         with open(path, "rb") as fh:
             return fh.read(16) == MAGIC
     except OSError:
+        if strict:
+            raise
         return False
 
 
-def load(path: str) -> list:
+def load(path: str, *, issue=None) -> list:
     uri = Path(path).resolve().as_uri() + "?mode=ro"
     con = sqlite3.connect(uri, uri=True)
     records = []
@@ -36,27 +38,36 @@ def load(path: str) -> list:
         con.execute("PRAGMA query_only = ON")
         tables = [row[0] for row in con.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")]
-        for table in tables:
+        for table_no, table in enumerate(tables, 1):
             quoted_table = _quote_identifier(table)
             try:
-                cols = [info[1] for info in con.execute(f'PRAGMA table_info({quoted_table})')]
                 cursor = con.execute(f'SELECT rowid, * FROM {quoted_table}')
+                cols = [column[0] for column in cursor.description[1:]]
             except sqlite3.Error:  # WITHOUT ROWID / virtual tables
+                if issue is not None:
+                    issue("table_unreadable", location=table_no)
                 continue
-            for row in cursor:
-                rowid, values = row[0], row[1:]
-                for col, value in zip(cols, values):
-                    if not isinstance(value, str) or len(value.strip()) < MIN_TEXT_LEN:
-                        continue
-                    records.append(MemoryRecord(
-                        id=f"{table}.{col}#{rowid}",
-                        content=value,
-                        store="sqlite",
-                        source=path,
-                        metadata={"table": table, "column": col},
-                    ))
-                    if len(records) >= MAX_RECORDS:
-                        return records
+            try:
+                for row in cursor:
+                    rowid, values = row[0], row[1:]
+                    for col, value in zip(cols, values):
+                        if not isinstance(value, str) or len(value.strip()) < MIN_TEXT_LEN:
+                            continue
+                        records.append(MemoryRecord(
+                            id=f"{table}.{col}#{rowid}",
+                            content=value,
+                            store="sqlite",
+                            source=path,
+                            metadata={"table": table, "column": col},
+                        ))
+                        if len(records) >= MAX_RECORDS:
+                            if issue is not None:
+                                issue("record_limit", location=table_no)
+                            return records
+            except sqlite3.Error:
+                if issue is None:
+                    raise
+                issue("table_unreadable", location=table_no)
     finally:
         con.close()
     return records

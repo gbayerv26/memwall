@@ -14,6 +14,7 @@ import time
 from dataclasses import dataclass
 
 from . import adapters
+from .adapters.coverage import Coverage
 from .heuristics import scan_records
 
 
@@ -80,11 +81,13 @@ class Tick:
     new_items: list       # list[(MemoryRecord, list[Finding])]
     total_findings: int
     scanned: int
+    coverage: Coverage
 
 
 def run_once(path: str, state_dir: str, fmt: str = "auto") -> Tick:
     previous, had_snapshot = _load_snapshot(state_dir, path, fmt)
-    reports = scan_records(adapters.load(path, fmt))
+    records, coverage = adapters.load_with_coverage(path, fmt)
+    reports = scan_records(records)
 
     all_fps, new_items, total = set(), [], 0
     for rep in reports:
@@ -98,9 +101,10 @@ def run_once(path: str, state_dir: str, fmt: str = "auto") -> Tick:
         if fresh:
             new_items.append((rep.record, fresh))
 
-    save_snapshot(state_dir, all_fps, path, fmt)
-    return Tick(is_baseline=not had_snapshot, new_items=new_items,
-                total_findings=total, scanned=len(reports))
+    if coverage.complete:
+        save_snapshot(state_dir, all_fps, path, fmt)
+    return Tick(is_baseline=coverage.complete and not had_snapshot, new_items=new_items,
+                total_findings=total, scanned=len(reports), coverage=coverage)
 
 
 def watch(path: str, state_dir: str, interval: int, fmt: str = "auto",

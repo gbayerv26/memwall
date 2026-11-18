@@ -1,10 +1,4 @@
-"""GDPR / right-to-be-forgotten verification.
-
-Given subject identifiers (an email, a name, an account id), find every memory
-that still references them. Summarized long-term memory is where erasure
-quietly fails - a name survives inside a paraphrase after the source row was
-deleted. This proves whether a subject was actually forgotten.
-"""
+"""Find literal subject identifiers in the records selected by an adapter."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field

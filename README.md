@@ -16,7 +16,15 @@ make no model calls. The optional Claude judge and externally run agent trials
 can incur provider charges. Memwall is a triage and enforcement layer with a
 defined boundary, not a guarantee that a memory is safe.
 
-## What's new in 0.8.0
+## What's new in 0.8.1
+
+- Scan and watch report how much selected input they could inspect. A partial
+  scan still reports known findings and exits 2.
+- Incomplete scans cannot update accepted baselines or watch snapshots.
+- Literal identifier checks distinguish observed matches, complete no-match
+  results, and unknown results. See the [coverage and upgrade guide](docs/SCAN_COVERAGE.md).
+
+### Introduced in 0.8.0
 
 - **Separate quarantine operations:** identical requests receive distinct IDs;
   journal collisions and malformed records refuse further quarantine mutation.
@@ -58,7 +66,7 @@ See the [changelog](CHANGELOG.md) and [trial guide](docs/TRIALS.md).
 
 ## Quickstart
 
-Install this checkout for version 0.8.0:
+Install this checkout for version 0.8.1:
 
 ```bash
 git clone https://github.com/gbayerv26/memwall
@@ -339,17 +347,18 @@ scheduled CI run, or systemd timer becomes a poisoning alarm with one line.
 
 ## Compliance
 
-**Right to be forgotten (GDPR Art. 17).** Erasure quietly fails in summarized
-agent memory: a name survives inside a paraphrase after the source row was
-deleted. `forget-check` checks whether supplied literal identifiers remain
-(case-insensitive); it cannot prove paraphrase or semantic erasure:
+**Literal identifier checks.** `forget-check` searches the selected memory
+fields for case-insensitive literal matches. Its results describe the supplied
+identifiers and the records inspected.
 
 ```bash
-memwall forget-check ./agent-memory --subject "alice@corp.com" --subject "Alice Smith" --json proof.json
+memwall forget-check ./agent-memory --subject "alice@corp.com" --subject "Alice Smith" --json check.json
 ```
 
-Exit 0 when identifiers are absent; exit 1 with every remaining literal
-reference. Add `--json` to save the result as a report.
+Exit 0 for a complete check with no literal matches, 1 for matches in a complete
+check, and 2 when coverage is incomplete or no store was selected. Add `--json`
+to save the result. Review [coverage limits](docs/SCAN_COVERAGE.md) before using
+the result in an erasure workflow.
 
 **Standard exports.** `memwall scan --sarif report.sarif` emits SARIF 2.1.0
 for GitHub code scanning and security dashboards; `--html report.html` writes

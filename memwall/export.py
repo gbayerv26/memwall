@@ -59,7 +59,7 @@ def to_sarif(result: ScanResult) -> dict:
                 entry["ruleIndex"] = index[f.rule_id]
             results.append(entry)
 
-    return {
+    document = {
         "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
         "version": "2.1.0",
         "runs": [{
@@ -72,6 +72,16 @@ def to_sarif(result: ScanResult) -> dict:
             "results": results,
         }],
     }
+    if result.coverage is not None:
+        coverage = result.coverage
+        invocation = {"executionSuccessful": coverage.status in {"complete", "no_sources"},
+                      "properties": {"memwallCoverage": coverage.to_dict()}}
+        if not coverage.complete:
+            invocation["toolExecutionNotifications"] = [{
+                "level": "warning", "message": {"text": coverage.summary()},
+            }]
+        document["runs"][0]["invocations"] = [invocation]
+    return document
 
 
 def _uri(source: str) -> str:
@@ -100,6 +110,8 @@ _SEV_COLOR = {
 
 
 def write_html(result: ScanResult, path: str) -> None:
+    coverage_html = (f'<div class="meta">{html.escape(result.coverage.summary())}</div>'
+                     if result.coverage is not None else "")
     flagged = sorted(result.flagged, key=lambda r: r.max_severity, reverse=True)
     counts = {}
     for rep in flagged:
@@ -158,6 +170,7 @@ def write_html(result: ScanResult, path: str) -> None:
   <h1>memwall report</h1>
   <div class="meta">scanned {result.scanned} memories from {len(result.stores)} source(s) ·
     flagged {len(flagged)}</div>
+  {coverage_html}
   <div>{chips}</div>
   {''.join(rows)}
   <footer>memwall {__version__} · https://github.com/gbayerv26/memwall</footer>

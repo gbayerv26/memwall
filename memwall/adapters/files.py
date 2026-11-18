@@ -32,9 +32,15 @@ def _blocks(text: str):
         yield start, "\n".join(block)
 
 
-def load(path: str) -> list:
-    with open(path, encoding="utf-8-sig", errors="replace") as fh:
-        text = fh.read()
+def load(path: str, *, issue=None) -> list:
+    with open(path, "rb") as fh:
+        raw = fh.read()
+    try:
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        if issue is not None:
+            issue("decode_error")
+        text = raw.decode("utf-8-sig", errors="replace")
     base = os.path.basename(path)
     low = base.lower()
     kind = "instructions" if low in INSTRUCTION_NAMES or low.endswith(".mdc") else "notes"

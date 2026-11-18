@@ -40,9 +40,13 @@ def render_terminal(result: ScanResult, color: "bool | None" = None, quiet: bool
         return f"{_ANSI[sev]}{text}{_RESET}" if color else text
 
     lines = [f"scanned {result.scanned} memories from {len(result.stores)} source(s)"]
+    if result.coverage is not None:
+        lines.append(result.coverage.summary())
     flagged = sorted(result.flagged, key=lambda r: r.max_severity, reverse=True)
     if not flagged:
-        lines.append("clean: no findings.")
+        lines.append("no findings in inspected records."
+                     if result.coverage is not None and not result.coverage.complete
+                     else "clean: no findings.")
         return "\n".join(lines)
 
     counts = {}
@@ -67,7 +71,7 @@ def render_terminal(result: ScanResult, color: "bool | None" = None, quiet: bool
 
 
 def to_dict(result: ScanResult) -> dict:
-    return {
+    data = {
         "memwall_version": __version__,
         "scanned": result.scanned,
         "sources": result.stores,
@@ -92,6 +96,9 @@ def to_dict(result: ScanResult) -> dict:
             if rep.findings or rep.judge_verdict
         ],
     }
+    if result.coverage is not None:
+        data["coverage"] = result.coverage.to_dict()
+    return data
 
 
 def write_json(result: ScanResult, path: str) -> None:
@@ -108,6 +115,8 @@ def write_markdown(result: ScanResult, path: str) -> None:
         f"- flagged: {len(result.flagged)}",
         "",
     ]
+    if result.coverage is not None:
+        lines.extend([result.coverage.summary(), ""])
     for rep in sorted(result.flagged, key=lambda r: r.max_severity, reverse=True):
         lines.append(f"## [{rep.max_severity.name}] `{rep.record.id}`")
         lines.append(f"*{rep.record.store}: {rep.record.source}*")

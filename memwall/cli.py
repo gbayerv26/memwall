@@ -141,12 +141,13 @@ def main(argv=None) -> int:
             print(f"{rule.id}  {rule.name.ljust(width)}  {rule.severity.name.ljust(8)}  {rule.description}")
         return 0
 
-    if args.command == "scan":
-        return _cmd_scan(args)
-    if args.command == "watch":
-        return _cmd_watch(args)
-    if args.command == "forget-check":
-        return _cmd_forget(args)
+    offline_commands = {"scan": _cmd_scan, "watch": _cmd_watch, "forget-check": _cmd_forget}
+    if args.command in offline_commands:
+        try:
+            return offline_commands[args.command](args)
+        except OSError:
+            print(f"memwall: {args.command}: unable to access report or state", file=sys.stderr)
+            return 2
     if args.command == "gateway":
         return _cmd_gateway(args)
     if args.command == "log":
@@ -179,13 +180,7 @@ def _cmd_trial(args) -> int:
 
 
 def _cmd_scan(args) -> int:
-    try:
-        records = adapters.load(args.path, args.format)
-    except FileNotFoundError:
-        print(f"memwall: path not found: {args.path}", file=sys.stderr)
-        return 2
-    if not records:
-        print(f"memwall: no memories found at {args.path}")
+    records, coverage = adapters.load_with_coverage(args.path, args.format)
 
     reports = heuristics.scan_records(records)
 
@@ -201,19 +196,22 @@ def _cmd_scan(args) -> int:
     suppressed = 0
     if args.baseline:
         from . import baseline as baseline_mod
-        if args.update_baseline:
+        if args.update_baseline and coverage.complete:
             count = baseline_mod.save_baseline(args.baseline, reports)
             print(f"baseline written: {args.baseline} ({count} fingerprints)")
             return 0
-        accepted = baseline_mod.load_baseline(args.baseline)
-        for rep in reports:
-            kept = [f for f in rep.findings
-                    if baseline_mod.fingerprint(rep.record, f) not in accepted]
-            suppressed += len(rep.findings) - len(kept)
-            rep.findings = kept
+        if args.update_baseline:
+            print("memwall: baseline update refused without complete coverage", file=sys.stderr)
+        else:
+            accepted = baseline_mod.load_baseline(args.baseline)
+            for rep in reports:
+                kept = [f for f in rep.findings
+                        if baseline_mod.fingerprint(rep.record, f) not in accepted]
+                suppressed += len(rep.findings) - len(kept)
+                rep.findings = kept
 
     sources = sorted({r.record.source for r in reports})
-    result = ScanResult(reports=reports, scanned=len(reports), stores=sources)
+    result = ScanResult(reports=reports, scanned=len(reports), stores=sources, coverage=coverage)
     print(report_mod.render_terminal(result, quiet=args.quiet))
     if suppressed:
         print(f"suppressed {suppressed} baselined finding(s)")
@@ -232,6 +230,8 @@ def _cmd_scan(args) -> int:
         export_mod.write_html(result, args.html_out)
         print(f"html report: {args.html_out}")
 
+    if not coverage.complete and (coverage.status != "no_sources" or args.update_baseline):
+        return 2
     threshold = Severity[args.fail_on.upper()]
     worst = max((f.severity for rep in reports for f in rep.findings), default=None)
     return 1 if worst is not None and worst >= threshold else 0
@@ -239,6 +239,12 @@ def _cmd_scan(args) -> int:
 
 def _print_tick(tick) -> None:
     from .report import _clean
+    print(tick.coverage.summary())
+    if not tick.coverage.complete:
+        print(f"watch snapshot preserved ({tick.total_findings} observed finding(s), "
+              f"{tick.scanned} memories inspected)")
+        if not tick.new_items:
+            return
     if tick.is_baseline:
         print(f"baseline established: {tick.total_findings} finding(s) across {tick.scanned} memories")
         return
@@ -246,7 +252,8 @@ def _print_tick(tick) -> None:
         print(f"no new findings ({tick.total_findings} known, {tick.scanned} memories)")
         return
     total_new = sum(len(fs) for _, fs in tick.new_items)
-    print(f"ALERT: {total_new} NEW finding(s) in {len(tick.new_items)} memor(ies):")
+    prefix = "ALERT" if tick.coverage.complete else "PROVISIONAL"
+    print(f"{prefix}: {total_new} NEW finding(s) in {len(tick.new_items)} memor(ies):")
     for record, fresh in tick.new_items:
         worst = max(f.severity for f in fresh)
         print(f"  [{worst.name}] {record.id} ({record.store}: {record.source})")
@@ -264,15 +271,14 @@ def _cmd_watch(args) -> int:
         if args.once:
             tick = monitor.run_once(args.path, args.state_dir, args.format)
             _print_tick(tick)
+            if not tick.coverage.complete:
+                return 2
             if args.fail_on_new and tick.new_items:
                 return 1
             return 0
         print(f"memwall watch: monitoring {args.path} every {args.interval}s "
               f"(state={args.state_dir}); Ctrl-C to stop")
         monitor.watch(args.path, args.state_dir, args.interval, args.format, on_tick=_print_tick)
-    except FileNotFoundError:
-        print(f"memwall: path not found: {args.path}", file=sys.stderr)
-        return 2
     except KeyboardInterrupt:
         print("\nstopped")
     return 0
@@ -284,15 +290,16 @@ def _cmd_forget(args) -> int:
     if not normalized_subjects:
         print("memwall: forget-check needs at least one --subject", file=sys.stderr)
         return 2
-    try:
-        hits = forget.scan_path(args.path, normalized_subjects, args.format)
-    except FileNotFoundError:
-        print(f"memwall: path not found: {args.path}", file=sys.stderr)
-        return 2
+    records, coverage = adapters.load_with_coverage(args.path, args.format)
+    hits = forget.find_subject(records, normalized_subjects)
 
     subjects = ", ".join(normalized_subjects)
+    print(coverage.summary())
     if not hits:
-        print(f"erased: no memory references {subjects}")
+        if coverage.complete:
+            print(f"no literal match in selected memory for {subjects}")
+        else:
+            print("literal match status unknown: no match in the records inspected")
     else:
         from .report import _clean
         print(f"NOT erased: {len(hits)} memor(ies) still reference {subjects}:")
@@ -302,18 +309,26 @@ def _cmd_forget(args) -> int:
             print(f'    "{_clean(hit.record.content)}"')
 
     if args.json_out:
+        result = "literal_match_found" if hits else (
+            "no_literal_match_in_scope" if coverage.complete else "unknown")
+        data = {
+            "subjects": normalized_subjects,
+            "result": result,
+            "coverage": coverage.to_dict(),
+            "matches": [
+                {"id": h.record.id, "source": h.record.source, "store": h.record.store,
+                 "matched": h.matched, "content": h.record.content}
+                for h in hits
+            ],
+        }
+        if hits or coverage.complete:
+            data["erased"] = not hits
         with open(args.json_out, "w", encoding="utf-8") as fh:
-            json.dump({
-                "subjects": normalized_subjects,
-                "erased": not hits,
-                "matches": [
-                    {"id": h.record.id, "source": h.record.source, "store": h.record.store,
-                     "matched": h.matched, "content": h.record.content}
-                    for h in hits
-                ],
-            }, fh, indent=2, ensure_ascii=False)
+            json.dump(data, fh, indent=2, ensure_ascii=False)
         print(f"json report: {args.json_out}")
 
+    if not coverage.complete:
+        return 2
     return 1 if hits else 0
 
 
