@@ -60,4 +60,3 @@ def compare(before, after):
     summary = {"coverage_issues": coverage_reasons, "coverage": dict(zip(("before", "after"), states)), "counts": dict(counts),
                "reason_codes": sorted(reasons)}
     return summary, details
-
