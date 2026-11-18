@@ -30,6 +30,10 @@ class MemoryRecord:
     source: str     # file path or store location
     created_at: Optional[str] = None
     metadata: dict = field(default_factory=dict)
+    # Reader provenance for inventory. A generated display ID is never a native key.
+    native_key: Optional[str] = None
+    inventory_namespace: tuple = ()
+    inventory_locator: Optional[str] = None
 
 
 @dataclass

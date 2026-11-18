@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 
 from ..models import MemoryRecord
+from .identity import json_identity
 
 _CONTENT_FIELDS = ("content", "memory", "text", "observation", "value", "fact", "note")
 
@@ -37,7 +38,9 @@ def load(path: str, *, issue=None) -> list:
         else:
             continue
         if content:
+            key, namespace = json_identity(item)
             records.append(MemoryRecord(
+                native_key=key, inventory_namespace=namespace, inventory_locator=f"item[{idx}]",
                 id=str(item.get("id", f"item-{idx}")) if isinstance(item, dict) else f"item-{idx}",
                 content=content,
                 store="json",
