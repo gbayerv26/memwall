@@ -41,6 +41,8 @@ def load(path: str, *, issue=None) -> list:
                 for idx, observation in enumerate(observations):
                     records.append(MemoryRecord(
                         id=f"{name}#obs{idx}",
+                        inventory_namespace=(name,) if isinstance(obj.get("name"), str) and name else (),
+                        inventory_locator=f"line {line_no}, observation {idx}",
                         content=str(observation),
                         store="mcp-memory",
                         source=path,

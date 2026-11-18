@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 
 from ..models import MemoryRecord
+from .identity import json_identity
 
 _META_KEYS = ("user_id", "agent_id", "run_id", "categories")
 _COLLECTIONS = ("results", "memories", "items")
@@ -45,7 +46,9 @@ def load(path: str, *, issue=None) -> list:
                 issue("unsupported_item", location=idx + 1)
             continue
         if content:
+            key, namespace = json_identity(item)
             records.append(MemoryRecord(
+                native_key=key, inventory_namespace=namespace, inventory_locator=f"item[{idx}]",
                 id=rid,
                 content=str(content),
                 store="mem0",
