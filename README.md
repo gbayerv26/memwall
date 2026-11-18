@@ -16,7 +16,13 @@ make no model calls. The optional Claude judge and externally run agent trials
 can incur provider charges. Memwall is a triage and enforcement layer with a
 defined boundary, not a guarantee that a memory is safe.
 
-## What's new in 0.8.1
+## What's new in 0.9.0
+
+Capture two private inventories of the same memory store and compare historical
+wording by scoped record key. The CLI reports coverage gaps and can write a
+counts-only summary for sharing. See the [inventory guide](docs/INVENTORY.md).
+
+### Introduced in 0.8.1
 
 - Scan and watch report how much selected input they could inspect. A partial
   scan still reports known findings and exits 2.
@@ -66,7 +72,7 @@ See the [changelog](CHANGELOG.md) and [trial guide](docs/TRIALS.md).
 
 ## Quickstart
 
-Install this checkout for version 0.8.1:
+Install this checkout for version 0.9.0:
 
 ```bash
 git clone https://github.com/gbayerv26/memwall

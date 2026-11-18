@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.0
+
+- Added offline inventory snapshots with private historical text, scoped identities,
+  source coverage and atomic publication to a new file.
+- Added directional comparisons, observed multiplicities for unkeyed records and a
+  shareable counts-only JSON summary.
+- Added a reproducible optional LangGraph Store example. See the [upgrade guide](docs/INVENTORY.md).
+
 ## 0.8.1 - 2026-11-18
 
 - Report complete, partial, failed and empty discovery coverage in offline
