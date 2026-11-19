@@ -25,11 +25,15 @@ A poisoned memory doesn't look like malware. It looks like this:
 Stored between "prefers dark roast coffee" and "works at Acme Corp", it reads
 like configuration. It's a backdoor.
 
-This is no longer theoretical. OWASP added Memory and Context Poisoning to
-its 2026 Agentic AI Top 10 (ASI06). Published research shows attack success
-rates of 80–99% against real agent stacks. But when I went looking for
-tooling, I found papers and best-practices blog posts. No scanner. No
-firewall. So I built **memwall**.
+This is no longer theoretical. [OWASP classifies Memory and Context Poisoning
+as ASI06 in its 2026 Agentic AI Top
+10](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/).
+[AgentPoison](https://arxiv.org/abs/2407.12784) reported average attack success
+above 80% at a poisoning rate below 0.1%, while [sleeper-memory
+research](https://arxiv.org/abs/2605.15338) found that malicious memories were
+stored in up to 99.8% of tested cases. But when I went looking for practical
+tooling, I couldn't find a lightweight local scanner combined with an MCP
+write firewall. So I built **memwall**.
 
 ## Pass 1: scan what's already in memory
 
@@ -106,7 +110,7 @@ direction).
 
 Closed memory systems (ChatGPT's built-in memory) can't be scanned by a third
 party. Heuristics are a triage layer, not a verdict — review before deleting.
-The judge is only as good as the model behind it. And this is v0.3: Zep,
+The judge is only as good as the model behind it. And this is v0.4: Zep,
 Letta, and LangGraph adapters are next.
 
 ## Try it
